@@ -1048,25 +1048,80 @@ Todas las rutas de esta seccion exigen el header `X-App-Private-Token` y devuelv
 | `name` | string | 1 a 80 caracteres (ej. "Visa Clasica"). |
 | `bank` | string | 1 a 80 caracteres. |
 | `credit_limit` | number | Cupo total, mayor a 0. |
-| `available_limit` | number | Cupo disponible calculado: `credit_limit` menos el capital pendiente de las compras con la tarjeta. Solo lectura. |
+| `available_limit` | number | Cupo disponible calculado: `credit_limit` menos la deuda de capital pendiente (restando pagos registrados). Solo lectura. |
 | `default_interest_rate` | number | Tasa mensual en porcentaje, 0 a 100. |
 | `cutoff_day` | integer | Dia de corte, 1 a 31. |
 | `payment_day` | integer | Dia limite de pago, 1 a 31. |
+| `next_cutoff_date` | string (YYYY-MM-DD) | Proxima fecha de corte calculada segun el ciclo actual. |
+| `next_payment_date` | string (YYYY-MM-DD) | Proxima fecha limite de pago exigible. |
+| `minimum_payment` | number | Valor sugerido de pago minimo para el vencimiento mas cercano. |
+| `full_payment` | number | Valor de pago total del extracto para no generar intereses en el ciclo. |
+| `total_debt` | number | Deuda total de capital pendiente en la tarjeta. |
 
-Calculo del capital pendiente: la primera cuota se considera pagada al cambiar de mes calendario respecto a la fecha de la compra; el saldo se toma de la tabla de amortizacion.
+#### Regla matematica de ciclos de corte y fechas limite de pago:
+1. **Asignacion de corte para una compra en fecha `YYYY-MM-DD`:**
+   - Si `dia(fecha) <= cutoff_day`: la compra ingresa al corte de ese mismo mes (`año, mes, cutoff_day`).
+   - Si `dia(fecha) > cutoff_day`: la compra ingresa al corte del mes siguiente (`año, mes + 1, cutoff_day`).
+2. **Determinacion de la fecha limite de pago correspondiente al corte:**
+   - Si `cutoff_day >= payment_day` (ej. corte 20, pago 10): el limite de pago es el dia `payment_day` del **mes siguiente** al mes de corte.
+   - Si `cutoff_day < payment_day` (ej. corte 5, pago 25): el limite de pago es el dia `payment_day` del **mismo mes** del corte.
+3. **Vencimiento de cuotas subsecuentes:**
+   - La cuota 1 vence en la primera fecha de pago calculada.
+   - La cuota $k$ ($1 \le k \le n$) vence exactamente en `primer_pago + (k - 1) meses` en el dia `payment_day`.
+   - Una cuota se computa como vencida/pagada cuando `fecha_actual >= fecha_vencimiento_k`.
 
 ### 11.2 Endpoints de tarjetas
 
 | Metodo | Ruta | Descripcion | Exito |
 |---|---|---|---|
-| GET | `/api/v1/credit-cards` | Lista todas las tarjetas. | 200 (array de `CreditCard`) |
-| GET | `/api/v1/credit-cards/{id}` | Detalle. | 200 |
+| GET | `/api/v1/credit-cards` | Lista todas las tarjetas con cupo, ciclo y pagos calculados. | 200 (array de `CreditCard`) |
+| GET | `/api/v1/credit-cards/{id}` | Detalle de tarjeta con saldo y fechas de facturacion. | 200 |
 | POST | `/api/v1/credit-cards` | Crea. Body: `name`, `bank`, `credit_limit`, `default_interest_rate`, `cutoff_day`, `payment_day` (todos obligatorios). | 201 |
 | PUT | `/api/v1/credit-cards/{id}` | Reemplazo completo, mismo body que POST. | 200 |
 | DELETE | `/api/v1/credit-cards/{id}` | Elimina. Responde `{ "id": n, "eliminado": true }`. | 200 |
-| POST | `/api/v1/credit-cards/simulate` | Simulacion (11.4). | 200 |
+| POST | `/api/v1/credit-cards/simulate` | Simulacion rapida de cuotas (11.4). | 200 |
+| POST | `/api/v1/credit-cards/{id}/payments` | Registra un pago ("Pagar Minimo", "Pagar Total" o personalizado). | 201 |
+| GET | `/api/v1/credit-cards/{id}/payments` | Lista historial de pagos realizados a la tarjeta. | 200 |
 
-Errores: `422 VALIDACION_FALLIDA`, `422 TEXTO_CON_EMOJI`, `404 RECURSO_NO_ENCONTRADO`, `409 TARJETA_EN_USO` (DELETE con transacciones asociadas), `401 TOKEN_INVALIDO`.
+Errores: `422 VALIDACION_FALLIDA`, `422 TEXTO_CON_EMOJI`, `404 RECURSO_NO_ENCONTRADO`, `409 TARJETA_EN_USO` (DELETE con transacciones o pagos asociados), `401 TOKEN_INVALIDO`.
+
+#### Registro de pago (`POST /api/v1/credit-cards/{id}/payments`):
+Request Body:
+```json
+{
+  "amount": 95632.85,
+  "payment_type": "MINIMO",
+  "payment_method": "DEBITO",
+  "date": "2026-11-04",
+  "notes": "Pago desde la aplicacion",
+  "create_transaction": true
+}
+```
+- `amount` (number > 0, obligatorio).
+- `payment_type`: `"MINIMO"`, `"TOTAL"` u `"OTRO"` (por defecto `"MINIMO"`).
+- `payment_method`: `"EFECTIVO"`, `"DEBITO"`, `"TRANSFERENCIA"` u `"OTRO"` (por defecto `"DEBITO"`).
+- `date`: `YYYY-MM-DD` (opcional, por defecto fecha UTC actual).
+- `notes`: string opcional hasta 500 caracteres sin emojis.
+- `create_transaction`: boolean (por defecto `true`). Al ser `true`, crea automaticamente un gasto contable en `transacciones` bajo la categoria 24 ("Deudas y prestamos").
+
+Response 201:
+```json
+{
+  "ok": true,
+  "data": {
+    "id": 1,
+    "card_id": 1,
+    "amount": 95632.85,
+    "payment_type": "MINIMO",
+    "payment_method": "DEBITO",
+    "date": "2026-11-04",
+    "notes": "Pago desde la aplicacion",
+    "transaction_id": 45,
+    "created_at": "2026-11-04T13:15:00Z"
+  },
+  "meta": null
+}
+```
 
 ### 11.3 Extension de `/transactions`
 
@@ -1131,6 +1186,21 @@ CREATE TABLE credit_cards (
     creado_en             TEXT    NOT NULL,
     actualizado_en        TEXT    NOT NULL
 );
+
+CREATE TABLE credit_card_payments (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    card_id        INTEGER NOT NULL REFERENCES credit_cards(id) ON DELETE CASCADE,
+    monto_centavos INTEGER NOT NULL CHECK (monto_centavos > 0),
+    fecha          TEXT    NOT NULL,
+    tipo_pago      TEXT    NOT NULL CHECK (tipo_pago IN ('MINIMO', 'TOTAL', 'OTRO')),
+    metodo_pago    TEXT    NOT NULL CHECK (metodo_pago IN ('EFECTIVO', 'DEBITO', 'TRANSFERENCIA', 'OTRO')),
+    notas          TEXT,
+    transaccion_id INTEGER REFERENCES transacciones(id) ON DELETE SET NULL,
+    creado_en      TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_card_payments_card ON credit_card_payments(card_id);
+CREATE INDEX IF NOT EXISTS idx_card_payments_fecha ON credit_card_payments(fecha);
+
 -- Columnas agregadas a transacciones (migracion automatica al iniciar):
 -- card_id, installments, is_interest_exempt, applied_interest_rate,
 -- monthly_installment_centavos, total_interest_centavos, total_with_interest_centavos

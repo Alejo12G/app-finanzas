@@ -140,6 +140,20 @@ function getDb() {
         creado_en             TEXT    NOT NULL,
         actualizado_en        TEXT    NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS credit_card_payments (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        card_id        INTEGER NOT NULL REFERENCES credit_cards(id) ON DELETE CASCADE,
+        monto_centavos INTEGER NOT NULL CHECK (monto_centavos > 0),
+        fecha          TEXT    NOT NULL,
+        tipo_pago      TEXT    NOT NULL CHECK (tipo_pago IN ('MINIMO', 'TOTAL', 'OTRO')),
+        metodo_pago    TEXT    NOT NULL CHECK (metodo_pago IN ('EFECTIVO', 'DEBITO', 'TRANSFERENCIA', 'OTRO')),
+        notas          TEXT,
+        transaccion_id INTEGER REFERENCES transacciones(id) ON DELETE SET NULL,
+        creado_en      TEXT    NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_card_payments_card ON credit_card_payments(card_id);
+    CREATE INDEX IF NOT EXISTS idx_card_payments_fecha ON credit_card_payments(fecha);
   `);
 
   const txColumns = new Set(

@@ -44,7 +44,9 @@ const {
   createCard,
   updateCard,
   deleteCard,
-  simulateCard
+  simulateCard,
+  createCardPayment,
+  listCardPayments
 } = require('./routes/tarjetas');
 const { getDashboard } = require('./routes/dashboard');
 const { analyzeFinances, handleParseCompraLibre } = require('./routes/ai');
@@ -257,6 +259,20 @@ async function handleRequest(req, res) {
           return;
         }
         deleteCard(req, res, id);
+        return;
+      }
+      if (segments.length === 3 && segments[2] === 'payments') {
+        ensureMethod(method, ['GET', 'POST']);
+        const id = parsePositiveIntId(segments[1]);
+        if (id === null) {
+          throw new AppError(404, 'RECURSO_NO_ENCONTRADO', 'Identificador de tarjeta invalido.');
+        }
+        if (method === 'GET') {
+          listCardPayments(req, res, id);
+          return;
+        }
+        const body = await readJsonBody(req);
+        createCardPayment(req, res, id, body);
         return;
       }
       throw new AppError(404, 'RUTA_NO_ENCONTRADA', 'La ruta solicitada no existe.');

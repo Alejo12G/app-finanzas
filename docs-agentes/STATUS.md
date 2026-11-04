@@ -7,7 +7,7 @@
 
 | Componente | Agente | Carpeta | Rama de trabajo | Estado | Ultima actualizacion | Notas |
 |---|---|---|---|---|---|---|
-| Backend | Agente Backend | `/backend-vps` | `feature/backend-api` | COMPLETADO | 2026-11-03 | Servidor HTTP nativo Node.js (`0.0.0.0:54892`), SQLite nativo (`node:sqlite` en modo WAL con 31 categorias semilla), validacion constante `X-App-Private-Token`, integracion Gemini IA (analisis mensual y parseo de compras en texto libre) y `deploy-vps.sh` con UFW + PM2 |
+| Backend | Agente Backend | `/backend-vps` | `feature/ciclos-pago-tarjetas` | COMPLETADO | 2026-11-04 | Ciclos reales de corte y pago (corte > pago -> mes siguiente), calculo automatico de fechas de facturacion, saldo de extracto, pago minimo y pago total en `CreditCard`, endpoints `POST/GET /api/v1/credit-cards/{id}/payments` para registro de pagos con generacion automatica de transaccion contable, y tests unitarios y de contrato superados |
 | PC | Agente PC | `/pc-app` | `feature/tarjetas-credito` | COMPLETADO | 2026-11-03 | Cliente de escritorio Node.js ultraligero con modulo completo de Tarjetas de Credito (`/api/v1/credit-cards`), visualizacion de cupos y fechas de corte/pago, panel contable de compras a cuotas con simulador en tiempo real (exencion 0% o tasa M.V.), etiquetas e indicadores clasicos FontAwesome `[EXENTA 0%]` y `[CON INTERES]`, y cero emojis |
 | Android | Agente Android | `/android-app` | `feature/tarjetas-credito` | COMPLETADO | 2026-11-03 | Cliente Android nativo en Java puro (cero dependencias pesadas), sistema de Temas (Modo Oscuro Clasico por defecto + Modo Claro), gestion completa de Tarjetas de Credito (`/api/v1/credit-cards`, `CreditCard.java`, `TarjetasView`, `CreditCardFormDialog`) y registro de compras a cuotas con tarjeta (`CREDIT_CARD`) en `POST /api/v1/transactions` con opcion exenta de intereses (`is_interest_exempt`) y calculo contable en vivo (`CreditCalculator.java`) |
 
@@ -40,6 +40,8 @@
 | Modulo Tarjetas de Credito: tabla `credit_cards` y CRUD `/credit-cards` | COMPLETADO |
 | Compras a cuotas en `/transactions` (`card_id`, `installments`, intereses, exentas) | COMPLETADO |
 | Simulador `POST /credit-cards/simulate` con tabla de amortizacion | COMPLETADO |
+| Ciclos de facturacion (corte > pago -> mes siguiente) y calculo de pago minimo/total | COMPLETADO |
+| Endpoints de registro e historial de pagos `/credit-cards/{id}/payments` | COMPLETADO |
 | Contexto de endeudamiento en tarjetas para `/ai/analyze` | COMPLETADO |
 | Documentacion en `API_CONTRACT.md` seccion 11 | COMPLETADO |
 | Despliegue del modulo de tarjetas en VPS | PENDIENTE |

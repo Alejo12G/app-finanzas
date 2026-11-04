@@ -15,6 +15,12 @@ process.env.PORT = '54894';
 const config = require('../src/config');
 const { getDb } = require('../src/db');
 const { handleRequest } = require('../src/app');
+const {
+  getFirstPaymentDate,
+  getInstallmentDueDates,
+  countPaidInstallments,
+  getCardBillingCycle
+} = require('../src/utils/credit');
 
 const BASE = `http://127.0.0.1:${config.PORT}/api/v1`;
 
@@ -35,9 +41,25 @@ async function main() {
   const server = http.createServer((req, res) => handleRequest(req, res));
   await new Promise((r) => server.listen(config.PORT, '127.0.0.1', r));
   try {
+    // 0. Pruebas unitarias directas de ciclos de corte y limite de pago
+    // Caso 1: corte 20, pago 10 (corte > pago -> toma el mes siguiente)
+    assert.equal(getFirstPaymentDate('2026-03-05', 20, 10), '2026-04-10'); // dia 5 <= 20
+    assert.equal(getFirstPaymentDate('2026-03-25', 20, 10), '2026-05-10'); // dia 25 > 20
+    const dues = getInstallmentDueDates('2026-03-05', 3, 20, 10);
+    assert.deepEqual(dues, ['2026-04-10', '2026-05-10', '2026-06-10']);
+    assert.equal(countPaidInstallments('2026-03-05', 3, 20, 10, '2026-04-09'), 0);
+    assert.equal(countPaidInstallments('2026-03-05', 3, 20, 10, '2026-04-10'), 1);
+    assert.equal(countPaidInstallments('2026-03-05', 3, 20, 10, '2026-05-10'), 2);
+    assert.equal(countPaidInstallments('2026-03-05', 3, 20, 10, '2026-06-10'), 3);
+
+    // Caso 2: corte 5, pago 25 (corte < pago -> mismo mes de corte)
+    assert.equal(getFirstPaymentDate('2026-03-02', 5, 25), '2026-03-25');
+    assert.equal(getFirstPaymentDate('2026-03-10', 5, 25), '2026-04-25');
+
     // Token obligatorio
     assert.equal((await api('GET', '/credit-cards', undefined, null)).status, 401);
     assert.equal((await api('POST', '/credit-cards/simulate', {}, null)).status, 401);
+    assert.equal((await api('POST', '/credit-cards/1/payments', {}, null)).status, 401);
 
     // Simulacion exenta
     let r = await api('POST', '/credit-cards/simulate', {
@@ -68,22 +90,29 @@ async function main() {
     });
     assert.equal(r.json.data.total_interest_amount, 0);
 
-    // Validaciones
+    // Validaciones de simulador
     assert.equal((await api('POST', '/credit-cards/simulate', { amount: 0, installments: 1 })).status, 422);
     assert.equal((await api('POST', '/credit-cards/simulate', { amount: 10, installments: 49 })).status, 422);
 
-    // CRUD de tarjetas
+    // CRUD de tarjetas (creando tarjeta con corte 20 y pago 10)
     r = await api('POST', '/credit-cards', {
       name: 'Visa Clasica', bank: 'Banco X', credit_limit: 5000000,
-      default_interest_rate: 2.15, cutoff_day: 15, payment_day: 30
+      default_interest_rate: 2.15, cutoff_day: 20, payment_day: 10
     });
     assert.equal(r.status, 201);
     const card = r.json.data;
     assert.deepEqual(Object.keys(card).sort(), [
       'available_limit', 'bank', 'credit_limit', 'cutoff_day', 'default_interest_rate',
-      'id', 'name', 'payment_day'
+      'full_payment', 'id', 'minimum_payment', 'name', 'next_cutoff_date', 'next_payment_date',
+      'payment_day', 'total_debt'
     ]);
     assert.equal(card.available_limit, 5000000);
+    assert.equal(card.total_debt, 0);
+    assert.equal(card.minimum_payment, 0);
+    assert.equal(card.full_payment, 0);
+    assert.ok(card.next_cutoff_date);
+    assert.ok(card.next_payment_date);
+
     assert.equal((await api('POST', '/credit-cards', { name: 'x' })).status, 422);
     assert.equal((await api('POST', '/credit-cards', {
       name: 'Visa', bank: 'B', credit_limit: 1, default_interest_rate: 1, cutoff_day: 32, payment_day: 1
@@ -129,15 +158,38 @@ async function main() {
     assert.equal(r.status, 201);
     assert.equal(r.json.data.card_id, null);
 
-    // Cupo disponible refleja la deuda
+    // Cupo disponible refleja la deuda y pagos minimos / totales calculados
     r = await api('GET', `/credit-cards/${card.id}`);
-    assert.ok(r.json.data.available_limit < 5000000);
+    assert.equal(r.status, 200);
+    const cardUpdated = r.json.data;
+    assert.ok(cardUpdated.available_limit < 5000000);
+    assert.ok(cardUpdated.total_debt > 0);
+    assert.ok(cardUpdated.next_cutoff_date);
+    assert.ok(cardUpdated.next_payment_date);
 
     // Listado de transacciones con campos de tarjeta
     r = await api('GET', '/transactions?metodo_pago=CREDIT_CARD');
     assert.equal(r.json.data.length, 2);
 
-    // No se puede eliminar tarjeta en uso
+    // Registrar pago a tarjeta (Pagar Minimo / Total)
+    r = await api('POST', `/credit-cards/${card.id}/payments`, {
+      amount: 50000,
+      payment_type: 'MINIMO',
+      payment_method: 'DEBITO',
+      notes: 'Pago minimo mensual de prueba'
+    });
+    assert.equal(r.status, 201);
+    assert.equal(r.json.data.amount, 50000);
+    assert.equal(r.json.data.payment_type, 'MINIMO');
+    assert.ok(r.json.data.transaction_id > 0);
+
+    // Listar pagos de tarjeta
+    r = await api('GET', `/credit-cards/${card.id}/payments`);
+    assert.equal(r.status, 200);
+    assert.equal(r.json.data.length, 1);
+    assert.equal(r.json.data[0].amount, 50000);
+
+    // No se puede eliminar tarjeta en uso ni con pagos
     assert.equal((await api('DELETE', `/credit-cards/${card.id}`)).status, 409);
 
     // PUT y DELETE de tarjeta libre
