@@ -1,14 +1,14 @@
 # STATUS.md - Tablero de Estado Multi-Agente
 
 **Contrato vigente:** `API_CONTRACT.md` v1.0.0 | `UI_DESIGN.md` v1.0.0
-**Ultima actualizacion:** 2026-11-03 (Agente Android: gestion de tarjetas de credito y compras a cuotas en `/android-app`, rama `feature/tarjetas-credito`)
+**Ultima actualizacion:** 2026-11-03 (Agente PC: modulo de tarjetas de credito, compras a cuotas con simulador y exencion de intereses en `/pc-app`, rama `feature/tarjetas-credito`)
 
 ## 1. Estado general
 
 | Componente | Agente | Carpeta | Rama de trabajo | Estado | Ultima actualizacion | Notas |
 |---|---|---|---|---|---|---|
 | Backend | Agente Backend | `/backend-vps` | `feature/backend-api` | COMPLETADO | 2026-11-03 | Servidor HTTP nativo Node.js (`0.0.0.0:54892`), SQLite nativo (`node:sqlite` en modo WAL con 31 categorias semilla), validacion constante `X-App-Private-Token`, integracion Gemini IA (analisis mensual y parseo de compras en texto libre) y `deploy-vps.sh` con UFW + PM2 |
-| PC | Agente PC | `/pc-app` | `feature/pc-app` | COMPLETADO | 2026-11-03 | Cliente de escritorio Node.js ultraligero (1.48 MB totales, 0 MB en `node_modules`) con ventana nativa `--app` (Edge/Chrome), Chart.js, FontAwesome 6.5.2 local + CDN y las 7 pantallas completas conectadas a `51.161.47.99:54892` |
+| PC | Agente PC | `/pc-app` | `feature/tarjetas-credito` | COMPLETADO | 2026-11-03 | Cliente de escritorio Node.js ultraligero con modulo completo de Tarjetas de Credito (`/api/v1/credit-cards`), visualizacion de cupos y fechas de corte/pago, panel contable de compras a cuotas con simulador en tiempo real (exencion 0% o tasa M.V.), etiquetas e indicadores clasicos FontAwesome `[EXENTA 0%]` y `[CON INTERES]`, y cero emojis |
 | Android | Agente Android | `/android-app` | `feature/tarjetas-credito` | COMPLETADO | 2026-11-03 | Cliente Android nativo en Java puro (cero dependencias pesadas), sistema de Temas (Modo Oscuro Clasico por defecto + Modo Claro), gestion completa de Tarjetas de Credito (`/api/v1/credit-cards`, `CreditCard.java`, `TarjetasView`, `CreditCardFormDialog`) y registro de compras a cuotas con tarjeta (`CREDIT_CARD`) en `POST /api/v1/transactions` con opcion exenta de intereses (`is_interest_exempt`) y calculo contable en vivo (`CreditCalculator.java`) |
 
 ### Estados permitidos
@@ -55,6 +55,9 @@
 | Compras con desglose | COMPLETADO |
 | Presupuestos | COMPLETADO |
 | Categorias | COMPLETADO |
+| Tarjetas de Credito (CRUD, vista, KPIs y paneles de cupos) | COMPLETADO |
+| Panel de compras a cuotas con simulador en tiempo real y exencion de intereses 0% | COMPLETADO |
+| Indicadores de cuotas y etiquetas [EXENTA 0%] / [CON INTERES] en movimientos y ticket | COMPLETADO |
 | Asesor IA | COMPLETADO |
 | Configuracion / estado de conexion | COMPLETADO |
 

@@ -89,6 +89,12 @@
               </button>
             </li>
             <li class="nav-item">
+              <button type="button" class="nav-btn" data-view="tarjetas">
+                <i class="fa-solid fa-credit-card" aria-hidden="true"></i>
+                <span>Tarjetas de Credito</span>
+              </button>
+            </li>
+            <li class="nav-item">
               <button type="button" class="nav-btn" data-view="ia">
                 <i class="fa-solid fa-robot" aria-hidden="true"></i>
                 <span>Asesor IA</span>
@@ -409,6 +415,72 @@
                     <span class="field-error" data-error-for="comercio"></span>
                   </div>
 
+                  <!-- Panel Contable Dinamico para Tarjeta de Credito y Cuotas -->
+                  <div id="tx-panel-credito" class="form-group full-width credit-card-panel" style="display: none;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                      <span style="font-weight: 700; font-size: 13px; color: var(--color-texto);">
+                        <i class="fa-solid fa-credit-card" aria-hidden="true" style="margin-right: 6px;"></i>
+                        <span>Plan de Cuotas e Intereses de Tarjeta de Credito</span>
+                      </span>
+                      <span class="badge badge-primary">
+                        <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+                        <span>Amortizacion Contable</span>
+                      </span>
+                    </div>
+
+                    <div class="form-grid">
+                      <div class="form-group full-width">
+                        <label class="form-label" for="tx-card-id">Tarjeta de Credito Emisora *</label>
+                        <select id="tx-card-id" name="card_id" class="form-control">
+                          <option value="">-- Seleccione una tarjeta de credito --</option>
+                        </select>
+                        <span class="field-error" data-error-for="card_id"></span>
+                      </div>
+
+                      <div class="form-group">
+                        <label class="form-label" for="tx-installments">Numero de Cuotas (1 a 48) *</label>
+                        <input type="number" id="tx-installments" name="installments" class="form-control tabular-nums" min="1" max="48" step="1" value="1" />
+                        <span class="field-error" data-error-for="installments"></span>
+                      </div>
+
+                      <div class="form-group">
+                        <label class="form-label" for="tx-applied-rate">Tasa de Interes Mensual (% M.V.) *</label>
+                        <input type="number" id="tx-applied-rate" name="applied_interest_rate" class="form-control tabular-nums" step="0.01" min="0" max="100" placeholder="0.00" />
+                        <span class="field-error" data-error-for="applied_interest_rate"></span>
+                      </div>
+
+                      <div class="form-group full-width" style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="tx-is-exempt" name="is_interest_exempt" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--color-exito);" />
+                        <label for="tx-is-exempt" style="cursor: pointer; font-size: 13px; font-weight: 600; color: var(--color-texto); margin: 0;">
+                          <i class="fa-solid fa-percent" aria-hidden="true" style="margin-right: 4px; color: var(--color-exito);"></i>
+                          <span>Compra exenta de intereses (0% interes)</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <!-- Simulador en Tiempo Real -->
+                    <div id="tx-simulador-box" class="credit-simulator-box">
+                      <div class="credit-simulator-header">
+                        <span><i class="fa-solid fa-calculator" aria-hidden="true"></i> Simulador Contable en Vivo</span>
+                        <span id="tx-sim-estado-tag" class="badge badge-success"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> [EXENTA 0%]</span>
+                      </div>
+                      <div class="credit-simulator-grid">
+                        <div class="credit-simulator-cell">
+                          <div class="credit-simulator-cell-label">Cuota Mensual</div>
+                          <div id="tx-sim-cuota" class="credit-simulator-cell-val">COP 0.00</div>
+                        </div>
+                        <div class="credit-simulator-cell">
+                          <div class="credit-simulator-cell-label">Total en Intereses</div>
+                          <div id="tx-sim-intereses" class="credit-simulator-cell-val" style="color: var(--color-exito);">COP 0.00</div>
+                        </div>
+                        <div class="credit-simulator-cell">
+                          <div class="credit-simulator-cell-label">Costo Final Total</div>
+                          <div id="tx-sim-total" class="credit-simulator-cell-val">COP 0.00</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="form-group full-width">
                     <label class="form-label" for="tx-notas">Notas Adicionales (max. 1000 caracteres)</label>
                     <textarea id="tx-notas" name="notas" class="form-control" maxlength="1000" rows="2" placeholder="Observaciones contables opcionales"></textarea>
@@ -644,6 +716,72 @@
                   <label class="form-label" for="compra-notas">Notas de la Factura</label>
                   <input type="text" id="compra-notas" name="notas" class="form-control" maxlength="1000" placeholder="Numero de comprobante u observaciones opcionales" />
                   <span class="field-error" data-error-for="notas"></span>
+                </div>
+
+                <!-- Panel Contable Dinamico para Tarjeta de Credito en Compras Detalladas -->
+                <div id="compra-panel-credito" class="form-group full-width credit-card-panel" style="grid-column: 1 / -1; display: none;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="font-weight: 700; font-size: 13px; color: var(--color-texto);">
+                      <i class="fa-solid fa-credit-card" aria-hidden="true" style="margin-right: 6px;"></i>
+                      <span>Financiacion en Cuotas de Factura con Tarjeta de Credito</span>
+                    </span>
+                    <span class="badge badge-primary">
+                      <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+                      <span>Amortizacion Contable</span>
+                    </span>
+                  </div>
+
+                  <div class="form-grid-4">
+                    <div class="form-group" style="grid-column: span 2;">
+                      <label class="form-label" for="compra-card-id">Tarjeta de Credito Emisora *</label>
+                      <select id="compra-card-id" name="card_id" class="form-control">
+                        <option value="">-- Seleccione una tarjeta de credito --</option>
+                      </select>
+                      <span class="field-error" data-error-for="card_id"></span>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="compra-installments">Cuotas (1 a 48) *</label>
+                      <input type="number" id="compra-installments" name="installments" class="form-control tabular-nums" min="1" max="48" step="1" value="1" />
+                      <span class="field-error" data-error-for="installments"></span>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="compra-applied-rate">Tasa Mensual (% M.V.) *</label>
+                      <input type="number" id="compra-applied-rate" name="applied_interest_rate" class="form-control tabular-nums" step="0.01" min="0" max="100" placeholder="0.00" />
+                      <span class="field-error" data-error-for="applied_interest_rate"></span>
+                    </div>
+
+                    <div class="form-group" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px;">
+                      <input type="checkbox" id="compra-is-exempt" name="is_interest_exempt" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--color-exito);" />
+                      <label for="compra-is-exempt" style="cursor: pointer; font-size: 13px; font-weight: 600; color: var(--color-texto); margin: 0;">
+                        <i class="fa-solid fa-percent" aria-hidden="true" style="margin-right: 4px; color: var(--color-exito);"></i>
+                        <span>Compra exenta de intereses (0% interes)</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Simulador en Tiempo Real de Compra -->
+                  <div id="compra-simulador-box" class="credit-simulator-box">
+                    <div class="credit-simulator-header">
+                      <span><i class="fa-solid fa-calculator" aria-hidden="true"></i> Simulador Contable de Factura en Vivo</span>
+                      <span id="compra-sim-estado-tag" class="badge badge-success"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> [EXENTA 0%]</span>
+                    </div>
+                    <div class="credit-simulator-grid">
+                      <div class="credit-simulator-cell">
+                        <div class="credit-simulator-cell-label">Cuota Mensual</div>
+                        <div id="compra-sim-cuota" class="credit-simulator-cell-val">COP 0.00</div>
+                      </div>
+                      <div class="credit-simulator-cell">
+                        <div class="credit-simulator-cell-label">Total en Intereses</div>
+                        <div id="compra-sim-intereses" class="credit-simulator-cell-val" style="color: var(--color-exito);">COP 0.00</div>
+                      </div>
+                      <div class="credit-simulator-cell">
+                        <div class="credit-simulator-cell-label">Costo Final Total</div>
+                        <div id="compra-sim-total" class="credit-simulator-cell-val">COP 0.00</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1080,7 +1218,180 @@
         </section>
 
         <!-- =========================================================
-             6. PANTALLA: ASESOR FINANCIERO IA (GEMINI)
+             6. PANTALLA: GESTION DE TARJETAS DE CREDITO
+             ========================================================= -->
+        <section id="view-tarjetas" class="view-section" aria-labelledby="title-tarjetas">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 id="title-tarjetas" class="page-title">
+                <i class="fa-solid fa-credit-card" aria-hidden="true"></i>
+                <span>Gestion de Tarjetas de Credito</span>
+              </h1>
+              <p class="page-subtitle">Administracion de cupos crediticios, tasas de interes mensual y amortizacion de compras a cuotas</p>
+            </div>
+            <div class="page-actions">
+              <button type="button" id="btn-tarjetas-reload" class="btn btn-secondary">
+                <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                <span>Recargar Tarjetas</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- KPIs Resumen de Lineas de Credito -->
+          <div class="kpi-grid" style="margin-bottom: 20px;">
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>CUPO TOTAL ASIGNADO</span>
+                <span class="kpi-icon"><i class="fa-solid fa-credit-card" aria-hidden="true"></i></span>
+              </div>
+              <div id="kpi-card-total-limit" class="kpi-value amount-neutro">COP 0.00</div>
+              <div class="kpi-meta">
+                <span>Total cupos aprobados:</span>
+                <strong id="kpi-card-count">0 tarjetas</strong>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>CUPO OCUPADO / DEUDA</span>
+                <span class="kpi-icon"><i class="fa-solid fa-percent" aria-hidden="true"></i></span>
+              </div>
+              <div id="kpi-card-used" class="kpi-value amount-gasto">COP 0.00</div>
+              <div class="kpi-meta">
+                <span>Utilizacion global:</span>
+                <strong id="kpi-card-used-pct">0.00 %</strong>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>CUPO DISPONIBLE TOTAL</span>
+                <span class="kpi-icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></span>
+              </div>
+              <div id="kpi-card-available" class="kpi-value amount-ingreso">COP 0.00</div>
+              <div class="kpi-meta">
+                <span>Capacidad de compra activa:</span>
+                <strong id="kpi-card-avail-pct">100.00 %</strong>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>PROXIMO VENCIMIENTO</span>
+                <span class="kpi-icon"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></span>
+              </div>
+              <div id="kpi-card-next-payment" class="kpi-value amount-neutro">Dia -</div>
+              <div class="kpi-meta">
+                <span>Corte y limite de pago:</span>
+                <strong id="kpi-card-cutoff-info">-</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-sidebar-layout">
+            <!-- Formulario de Registro / Edicion de Tarjeta -->
+            <div class="card">
+              <div class="card-header">
+                <h2 id="tarjeta-form-title" class="card-title">
+                  <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                  <span>Registrar Nueva Tarjeta</span>
+                </h2>
+                <button type="button" id="btn-tarjeta-cancel-edit" class="btn btn-secondary btn-sm" style="display: none;">
+                  <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                  <span>Cancelar Edicion</span>
+                </button>
+              </div>
+
+              <div id="tarjeta-form-alert" style="display: none; margin-bottom: 12px;"></div>
+
+              <form id="form-tarjeta" novalidate>
+                <input type="hidden" id="tarjeta-id" value="" />
+
+                <div class="form-grid">
+                  <div class="form-group full-width">
+                    <label class="form-label" for="tarjeta-name">Nombre de la Tarjeta (ej. Visa Signature) *</label>
+                    <input type="text" id="tarjeta-name" name="name" class="form-control" maxlength="80" placeholder="Ej. Visa Platinum" required />
+                    <span class="field-error" data-error-for="name"></span>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label class="form-label" for="tarjeta-bank">Banco o Entidad Emisora *</label>
+                    <input type="text" id="tarjeta-bank" name="bank" class="form-control" maxlength="80" placeholder="Ej. Bancolombia" required />
+                    <span class="field-error" data-error-for="bank"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="tarjeta-limit">Cupo Total Aprobado (<span class="currency-unit-label">COP</span>) *</label>
+                    <input type="number" id="tarjeta-limit" name="credit_limit" class="form-control tabular-nums" step="0.01" min="0.01" placeholder="5000000.00" required />
+                    <span class="field-error" data-error-for="credit_limit"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="tarjeta-rate">Tasa Interes Mensual (% M.V.) *</label>
+                    <input type="number" id="tarjeta-rate" name="default_interest_rate" class="form-control tabular-nums" step="0.01" min="0" max="100" placeholder="2.15" required />
+                    <span class="field-error" data-error-for="default_interest_rate"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="tarjeta-cutoff">Dia de Corte Mensual (1 a 31) *</label>
+                    <input type="number" id="tarjeta-cutoff" name="cutoff_day" class="form-control tabular-nums" min="1" max="31" step="1" placeholder="15" required />
+                    <span class="field-error" data-error-for="cutoff_day"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="tarjeta-payment">Dia Limite de Pago (1 a 31) *</label>
+                    <input type="number" id="tarjeta-payment" name="payment_day" class="form-control tabular-nums" min="1" max="31" step="1" placeholder="5" required />
+                    <span class="field-error" data-error-for="payment_day"></span>
+                  </div>
+
+                  <div class="form-group full-width" style="margin-top: 4px;">
+                    <button type="submit" id="btn-tarjeta-submit" class="btn btn-primary" style="width: 100%;">
+                      <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                      <span id="btn-tarjeta-submit-label">Guardar Tarjeta</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Listado y Paneles de Tarjetas -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <!-- Tarjetas visuales de credito -->
+              <div id="tarjetas-cards-container" class="credit-cards-grid"></div>
+
+              <!-- Tabla Detallada -->
+              <div class="card">
+                <div class="card-header">
+                  <h2 class="card-title">
+                    <i class="fa-solid fa-table-list" aria-hidden="true"></i>
+                    <span>Detalle de Tarjetas de Credito y Cupos</span>
+                  </h2>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="data-table" id="tarjetas-table">
+                    <thead>
+                      <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Tarjeta / Banco</th>
+                        <th class="text-right">Cupo Total</th>
+                        <th class="text-right">Cupo Ocupado</th>
+                        <th class="text-right">Cupo Disponible</th>
+                        <th class="text-center">Corte / Pago</th>
+                        <th class="text-right">Tasa Mensual</th>
+                        <th style="width: 100px;" class="text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tarjetas-table-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             7. PANTALLA: ASESOR FINANCIERO IA (GEMINI)
              ========================================================= -->
         <section id="view-ia" class="view-section" aria-labelledby="title-ia">
           <div class="page-header">

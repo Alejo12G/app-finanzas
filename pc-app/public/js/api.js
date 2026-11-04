@@ -201,6 +201,26 @@
       return request('GET', '/dashboard', { query: { anio, mes } });
     },
 
+    // 7.7 Tarjetas de Credito
+    getCreditCards() {
+      return request('GET', '/credit-cards');
+    },
+    getCreditCard(id) {
+      return request('GET', `/credit-cards/${encodeURIComponent(id)}`);
+    },
+    createCreditCard(body) {
+      return request('POST', '/credit-cards', { body });
+    },
+    updateCreditCard(id, body) {
+      return request('PUT', `/credit-cards/${encodeURIComponent(id)}`, { body });
+    },
+    deleteCreditCard(id) {
+      return request('DELETE', `/credit-cards/${encodeURIComponent(id)}`);
+    },
+    simulateCreditCard(body) {
+      return request('POST', '/credit-cards/simulate', { body });
+    },
+
     // 8 Modulo IA (Gemini)
     analyzeAi(body) {
       return request('POST', '/ai/analyze', { body });

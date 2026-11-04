@@ -1140,3 +1140,158 @@ code {
     overflow: visible;
   }
 }
+
+/* =========================================================
+   MODULO: TARJETAS DE CREDITO Y COMPRAS A CUOTAS
+   ========================================================= */
+
+.credit-card-panel {
+  background-color: var(--color-primario-suave);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 14px;
+}
+
+.credit-simulator-box {
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.credit-simulator-header {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-texto-secundario);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.credit-simulator-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .credit-simulator-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.credit-simulator-cell {
+  padding: 8px 10px;
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  text-align: center;
+}
+
+.credit-simulator-cell-label {
+  font-size: 11px;
+  color: var(--color-texto-secundario);
+  margin-bottom: 4px;
+}
+
+.credit-simulator-cell-val {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-texto);
+}
+
+.credit-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.credit-card-visual {
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color var(--transicion-base);
+}
+
+.credit-card-visual:hover {
+  border-color: var(--color-primario-hover);
+}
+
+.credit-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.credit-card-bank {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-texto-secundario);
+  text-transform: uppercase;
+}
+
+.credit-card-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-texto);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.credit-card-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 10px;
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  text-align: center;
+}
+
+.credit-card-metric-title {
+  font-size: 10px;
+  color: var(--color-texto-secundario);
+  text-transform: uppercase;
+}
+
+.credit-card-metric-num {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-texto);
+}
+
+.credit-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-texto-secundario);
+  border-top: 1px solid var(--color-borde);
+  padding-top: 10px;
+}
+
+.badge-exempt {
+  background-color: var(--color-exito-suave);
+  color: var(--color-exito);
+  border: 1px solid var(--color-exito);
+}
+
+.badge-interest {
+  background-color: var(--color-peligro-suave);
+  color: var(--color-peligro);
+  border: 1px solid var(--color-peligro);
+}
+

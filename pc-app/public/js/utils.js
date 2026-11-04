@@ -272,6 +272,54 @@
     };
   }
 
+  function simulateCreditPurchase(amount, installments, interestRate, isExempt) {
+    const principal = Number(amount) || 0;
+    const n = Math.max(1, Math.min(48, Math.trunc(Number(installments) || 1)));
+    const exempt = isExempt === true;
+    const ratePct = Number(interestRate) || 0;
+    const noInterest = exempt || !(ratePct > 0);
+
+    if (principal <= 0) {
+      return {
+        amount: 0,
+        installments: n,
+        interest_rate: 0,
+        is_interest_exempt: exempt,
+        monthly_installment_amount: 0,
+        total_interest_amount: 0,
+        total_with_interest: 0
+      };
+    }
+
+    if (noInterest || n === 1) {
+      const monthly = Number((principal / n).toFixed(2));
+      return {
+        amount: principal,
+        installments: n,
+        interest_rate: 0,
+        is_interest_exempt: exempt,
+        monthly_installment_amount: monthly,
+        total_interest_amount: 0,
+        total_with_interest: principal
+      };
+    }
+
+    const r = ratePct / 100;
+    const monthly = (principal * r) / (1 - Math.pow(1 + r, -n));
+    const total = monthly * n;
+    const totalInterest = Math.max(0, total - principal);
+
+    return {
+      amount: principal,
+      installments: n,
+      interest_rate: ratePct,
+      is_interest_exempt: false,
+      monthly_installment_amount: Number(monthly.toFixed(2)),
+      total_interest_amount: Number(totalInterest.toFixed(2)),
+      total_with_interest: Number(total.toFixed(2))
+    };
+  }
+
   global.AppUtils = {
     EMOJI_REGEX,
     MESES_NOMBRES,
@@ -300,6 +348,7 @@
     formatMonthYear,
     formatShortMonthYear,
     resolveCategoryIcon,
-    escapeHtml
+    escapeHtml,
+    simulateCreditPurchase
   };
 })(typeof window !== 'undefined' ? window : globalThis);

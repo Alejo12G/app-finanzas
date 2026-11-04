@@ -229,6 +229,153 @@ async function runTests() {
   assert(htmlContent.includes('data-theme'), 'index.html debe aplicar data-theme en el script inicial');
   console.log('[OK] Sistema de temas, persistencia y variables CSS validados correctamente.');
 
+  console.log('[TEST] 8. Validando modulo de Tarjetas de Credito y Sistema de Cuotas...');
+  const { simulateCreditPurchase } = global.AppUtils;
+
+  // 8.1 Validacion de calculos de simulacion
+  const simExenta = simulateCreditPurchase(1200000, 12, 2.5, true);
+  assert.strictEqual(simExenta.is_interest_exempt, true);
+  assert.strictEqual(simExenta.total_interest_amount, 0);
+  assert.strictEqual(simExenta.monthly_installment_amount, 100000);
+  assert.strictEqual(simExenta.total_with_interest, 1200000);
+
+  const simConInteres = simulateCreditPurchase(1000000, 6, 2.15, false);
+  assert.strictEqual(simConInteres.is_interest_exempt, false);
+  assert(simConInteres.total_interest_amount > 0, 'Debe generar intereses positivos');
+  assert(simConInteres.monthly_installment_amount > 166666, 'Cuota debe ser superior al capital dividido');
+  assert.strictEqual(
+    Number((simConInteres.amount + simConInteres.total_interest_amount).toFixed(2)),
+    simConInteres.total_with_interest,
+    'Costo total debe ser capital mas intereses'
+  );
+
+  const simUnaCuota = simulateCreditPurchase(500000, 1, 2.15, false);
+  assert.strictEqual(simUnaCuota.monthly_installment_amount, 500000);
+  assert.strictEqual(simUnaCuota.total_interest_amount, 0);
+  assert.strictEqual(simUnaCuota.total_with_interest, 500000);
+
+  // 8.2 Validacion de estructura en index.html y FontAwesome icons requeridos
+  assert(htmlContent.includes('id="view-tarjetas"'), 'index.html debe contener view-tarjetas');
+  assert(htmlContent.includes('id="form-tarjeta"'), 'index.html debe contener form-tarjeta');
+  assert(htmlContent.includes('id="tx-panel-credito"'), 'index.html debe contener tx-panel-credito');
+  assert(htmlContent.includes('id="compra-panel-credito"'), 'index.html debe contener compra-panel-credito');
+  assert(htmlContent.includes('id="tx-simulador-box"'), 'index.html debe contener tx-simulador-box');
+  assert(htmlContent.includes('id="compra-simulador-box"'), 'index.html debe contener compra-simulador-box');
+  assert(htmlContent.includes('fa-solid fa-credit-card'), 'Debe usar fa-solid fa-credit-card');
+  assert(htmlContent.includes('fa-solid fa-percent'), 'Debe usar fa-solid fa-percent');
+  assert(htmlContent.includes('fa-solid fa-calendar-days'), 'Debe usar fa-solid fa-calendar-days');
+  assert(htmlContent.includes('fa-solid fa-shield-halved'), 'Debe usar fa-solid fa-shield-halved');
+
+  // 8.3 Validacion de endpoints de ApiClient para credit-cards contra mock server
+  const mockCardServer = http.createServer((req, res) => {
+    let raw = '';
+    req.on('data', (c) => { raw += c; });
+    req.on('end', () => {
+      const url = req.url || '';
+      const method = req.method;
+      const body = raw ? JSON.parse(raw) : {};
+
+      if (url === '/api/v1/credit-cards' && method === 'GET') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          ok: true,
+          data: [
+            {
+              id: 1,
+              name: 'Visa Clásica',
+              bank: 'Bancolombia',
+              credit_limit: 5000000,
+              available_limit: 4500000,
+              default_interest_rate: 2.15,
+              cutoff_day: 15,
+              payment_day: 5
+            }
+          ]
+        }));
+        return;
+      }
+
+      if (url === '/api/v1/credit-cards' && method === 'POST') {
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, data: { id: 2, ...body, available_limit: body.credit_limit } }));
+        return;
+      }
+
+      if (url === '/api/v1/credit-cards/simulate' && method === 'POST') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          ok: true,
+          data: {
+            amount: body.amount,
+            installments: body.installments,
+            interest_rate: body.interest_rate,
+            is_interest_exempt: body.is_interest_exempt,
+            monthly_installment_amount: 179555.22,
+            total_interest_amount: 77331.32,
+            total_with_interest: 1077331.32,
+            amortization_table: []
+          }
+        }));
+        return;
+      }
+
+      if (url.startsWith('/api/v1/credit-cards/1') && method === 'DELETE') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, data: { id: 1, eliminado: true } }));
+        return;
+      }
+
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: { codigo: 'NO_ENCONTRADO' } }));
+    });
+  });
+
+  await new Promise((resolve) => mockCardServer.listen(0, '127.0.0.1', resolve));
+  const cardPort = mockCardServer.address().port;
+
+  try {
+    await global.AppConfig.updateConfig({
+      host: '127.0.0.1',
+      puerto: cardPort
+    });
+
+    const listRes = await global.ApiClient.getCreditCards();
+    assert.strictEqual(listRes.ok, true);
+    assert.strictEqual(listRes.data.length, 1);
+    assert.strictEqual(listRes.data[0].bank, 'Bancolombia');
+
+    const createRes = await global.ApiClient.createCreditCard({
+      name: 'Mastercard Black',
+      bank: 'Davivienda',
+      credit_limit: 12000000,
+      default_interest_rate: 1.95,
+      cutoff_day: 20,
+      payment_day: 10
+    });
+    assert.strictEqual(createRes.ok, true);
+    assert.strictEqual(createRes.data.name, 'Mastercard Black');
+    assert.strictEqual(createRes.data.credit_limit, 12000000);
+
+    const simRes = await global.ApiClient.simulateCreditCard({
+      amount: 1000000,
+      installments: 6,
+      interest_rate: 2.15,
+      is_interest_exempt: false
+    });
+    assert.strictEqual(simRes.ok, true);
+    assert.strictEqual(simRes.data.monthly_installment_amount, 179555.22);
+    assert.strictEqual(simRes.data.total_interest_amount, 77331.32);
+
+    const delRes = await global.ApiClient.deleteCreditCard(1);
+    assert.strictEqual(delRes.ok, true);
+    assert.strictEqual(delRes.data.eliminado, true);
+  } finally {
+    await global.AppConfig.resetToDefault();
+    mockCardServer.close();
+  }
+
+  console.log('[OK] Modulo de Tarjetas de Credito y Simulador contable validados correctamente.');
+
   console.log('\n=== TODAS LAS PRUEBAS DE CONFORMIDAD SUPERADAS EXITOSAMENTE ===');
 }
 

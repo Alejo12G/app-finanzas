@@ -76,7 +76,9 @@
     chartCategorias: null,
     confirmCallback: null,
     activeTicketCompraId: null,
-    dictadoArticulos: []
+    dictadoArticulos: [],
+    creditCards: [],
+    editingCreditCardId: null
   };
 
   // =========================================================
@@ -496,6 +498,8 @@
       loadPresupuestos();
     } else if (viewName === 'categorias') {
       loadCategoriasView();
+    } else if (viewName === 'tarjetas') {
+      loadCreditCardsView();
     } else if (viewName === 'configuracion') {
       populateConfigForm();
     }
@@ -538,8 +542,9 @@
       if ($('diag-moneda')) $('diag-moneda').textContent = data.moneda || 'COP';
       if ($('diag-hora-servidor')) $('diag-hora-servidor').textContent = data.hora_servidor || '-';
 
-      // Comprobar validez del token privado cargando categorias
+      // Comprobar validez del token privado cargando categorias y tarjetas
       await fetchCategoriasMaster();
+      await fetchCreditCardsMaster();
       if ($('diag-auth')) {
         $('diag-auth').innerHTML = `<span class="badge badge-success"><i class="fa-solid fa-key" aria-hidden="true"></i><span>Token Valido</span></span>`;
       }
@@ -1012,6 +1017,20 @@
 
     tbody.innerHTML = AppState.transacciones.map((tx) => {
       const isIngreso = tx.tipo === 'INGRESO';
+      const isCardPurchase = (tx.metodo_pago === 'CREDITO' || tx.card_id) && tx.installments;
+      const cardInstallmentsBadge = isCardPurchase ? `
+        <div style="margin-top: 4px; display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+          <span class="badge badge-primary" title="${tx.installments} cuotas">
+            <i class="fa-solid fa-credit-card" aria-hidden="true"></i>
+            <span>${tx.installments} cuotas</span>
+          </span>
+          ${tx.is_interest_exempt
+            ? `<span class="badge badge-exempt" title="Compra exenta de intereses (0% interes)"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> [EXENTA 0%]</span>`
+            : `<span class="badge badge-interest" title="Tasa mensual: ${Number(tx.applied_interest_rate || 0).toFixed(2)}% M.V."><i class="fa-solid fa-percent" aria-hidden="true"></i> [CON INTERES]</span>`
+          }
+        </div>
+      ` : '';
+
       return `
         <tr>
           <td class="tabular-nums">#${tx.id}</td>
@@ -1023,7 +1042,10 @@
           </td>
           <td>${escapeHtml(tx.comercio || '-')}</td>
           <td>${renderNaturalezaBadge(tx.naturaleza)}</td>
-          <td>${renderMetodoPagoBadge(tx.metodo_pago)}</td>
+          <td>
+            ${renderMetodoPagoBadge(tx.metodo_pago)}
+            ${cardInstallmentsBadge}
+          </td>
           <td class="text-right ${isIngreso ? 'amount-ingreso' : 'amount-gasto'}">
             ${formatCentavos(tx.monto_centavos, isIngreso ? 'INGRESO' : 'GASTO')}
           </td>
@@ -1061,6 +1083,19 @@
     $('tx-metodo-pago').value = 'DEBITO';
     $('tx-comercio').value = '';
     $('tx-notas').value = '';
+
+    // Resetear panel de tarjeta de credito
+    if ($('tx-panel-credito')) $('tx-panel-credito').style.display = 'none';
+    if ($('tx-card-id')) $('tx-card-id').value = '';
+    if ($('tx-installments')) $('tx-installments').value = '1';
+    if ($('tx-is-exempt')) $('tx-is-exempt').checked = false;
+    if ($('tx-applied-rate')) {
+      $('tx-applied-rate').value = '';
+      $('tx-applied-rate').disabled = false;
+      $('tx-applied-rate').style.cursor = '';
+      $('tx-applied-rate').style.opacity = '';
+    }
+
     populateAllCategorySelects();
     $('tx-form-title').innerHTML = `<i class="fa-solid fa-plus" aria-hidden="true"></i><span>Registrar Ingreso o Gasto</span>`;
     $('btn-tx-submit-label').textContent = 'Guardar Transaccion';
@@ -1089,6 +1124,26 @@
     $('tx-metodo-pago').value = tx.metodo_pago;
     $('tx-comercio').value = tx.comercio || '';
     $('tx-notas').value = tx.notas || '';
+
+    // Soporte para tarjetas de credito y cuotas
+    const isCard = tx.metodo_pago === 'CREDITO' || tx.card_id;
+    if (isCard && $('tx-panel-credito')) {
+      $('tx-panel-credito').style.display = 'block';
+      if ($('tx-card-id')) $('tx-card-id').value = String(tx.card_id || '');
+      if ($('tx-installments')) $('tx-installments').value = String(tx.installments || 1);
+      const isExempt = Boolean(tx.is_interest_exempt);
+      if ($('tx-is-exempt')) $('tx-is-exempt').checked = isExempt;
+      if ($('tx-applied-rate')) {
+        $('tx-applied-rate').value = isExempt ? '0.00' : String(Number(tx.applied_interest_rate || 0).toFixed(2));
+        $('tx-applied-rate').disabled = isExempt;
+        $('tx-applied-rate').style.cursor = isExempt ? 'not-allowed' : '';
+        $('tx-applied-rate').style.opacity = isExempt ? '0.6' : '';
+      }
+      runLiveSimulation('tx');
+    } else if ($('tx-panel-credito')) {
+      $('tx-panel-credito').style.display = 'none';
+    }
+
     $('tx-form-title').innerHTML = `<i class="fa-solid fa-pen" aria-hidden="true"></i><span>Editar Transaccion #${tx.id}</span>`;
     $('btn-tx-submit-label').textContent = 'Guardar Cambios';
     $('btn-tx-cancel-edit').style.display = 'inline-flex';
@@ -1140,6 +1195,42 @@
       hasError = true;
     }
 
+    // Validacion de campos contables de Tarjeta de Credito
+    let cardId = null;
+    let installments = 1;
+    let isExempt = false;
+    let appliedRate = 0;
+
+    if (tipo === 'GASTO' && metodoPago === 'CREDITO') {
+      const cardVal = $('tx-card-id') ? $('tx-card-id').value : '';
+      cardId = parseInt(cardVal, 10);
+      if (!Number.isInteger(cardId) || cardId <= 0) {
+        applyFieldError(form, 'card_id', 'Seleccione una tarjeta de credito.');
+        hasError = true;
+      }
+
+      const instVal = $('tx-installments') ? parseInt($('tx-installments').value, 10) : 1;
+      if (!Number.isInteger(instVal) || instVal < 1 || instVal > 48) {
+        applyFieldError(form, 'installments', 'El numero de cuotas debe estar entre 1 y 48.');
+        hasError = true;
+      } else {
+        installments = instVal;
+      }
+
+      isExempt = Boolean($('tx-is-exempt') && $('tx-is-exempt').checked);
+      if (isExempt) {
+        appliedRate = 0;
+      } else {
+        const rateVal = parseFloat($('tx-applied-rate') ? $('tx-applied-rate').value : 0);
+        if (!Number.isFinite(rateVal) || rateVal < 0 || rateVal > 100) {
+          applyFieldError(form, 'applied_interest_rate', 'La tasa de interes debe ser un numero entre 0 y 100.');
+          hasError = true;
+        } else {
+          appliedRate = rateVal;
+        }
+      }
+    }
+
     if (hasError) return;
 
     const payload = {
@@ -1154,6 +1245,14 @@
       notas: notasRaw ? notasRaw : null
     };
 
+    if (tipo === 'GASTO' && metodoPago === 'CREDITO') {
+      payload.payment_method = 'CREDIT_CARD';
+      payload.card_id = cardId;
+      payload.installments = installments;
+      payload.is_interest_exempt = isExempt;
+      payload.applied_interest_rate = appliedRate;
+    }
+
     const btn = $('btn-tx-submit');
     setButtonLoading(btn, true, 'Guardando...');
     try {
@@ -1167,6 +1266,9 @@
         showBanner('tx-form-alert', 'success', 'Transaccion registrada correctamente.');
       }
       await loadTransacciones(AppState.transaccionesMeta.pagina || 1);
+      if (payload.card_id) {
+        await fetchCreditCardsMaster();
+      }
     } catch (err) {
       handleApiError(err, { formEl: form, alertContainerId: 'tx-form-alert' });
     } finally {
@@ -1308,6 +1410,9 @@
     if ($('compra-total-preview')) {
       $('compra-total-preview').textContent = formatCentavos(sumaTotalCentavos, 'TOTAL_MONEDA');
     }
+    if ($('compra-panel-credito') && $('compra-panel-credito').style.display !== 'none') {
+      runLiveSimulation('compra');
+    }
     return sumaTotalCentavos;
   }
 
@@ -1324,6 +1429,19 @@
     $('compra-naturaleza').value = 'VARIABLE';
     $('compra-descripcion').value = '';
     $('compra-notas').value = '';
+
+    // Resetear panel de tarjeta de credito en compras
+    if ($('compra-panel-credito')) $('compra-panel-credito').style.display = 'none';
+    if ($('compra-card-id')) $('compra-card-id').value = '';
+    if ($('compra-installments')) $('compra-installments').value = '1';
+    if ($('compra-is-exempt')) $('compra-is-exempt').checked = false;
+    if ($('compra-applied-rate')) {
+      $('compra-applied-rate').value = '';
+      $('compra-applied-rate').disabled = false;
+      $('compra-applied-rate').style.cursor = '';
+      $('compra-applied-rate').style.opacity = '';
+    }
+
     populateAllCategorySelects();
 
     $('compra-form-title').innerHTML = `<i class="fa-solid fa-receipt" aria-hidden="true"></i><span>Nueva Factura / Compra con Desglose de Articulos</span>`;
@@ -1359,12 +1477,33 @@
       $('compra-descripcion').value = compra.descripcion || '';
       $('compra-notas').value = compra.notas || '';
 
+      const isCard = compra.metodo_pago === 'CREDITO' || compra.card_id;
+      if (isCard && $('compra-panel-credito')) {
+        $('compra-panel-credito').style.display = 'block';
+        if ($('compra-card-id')) $('compra-card-id').value = String(compra.card_id || '');
+        if ($('compra-installments')) $('compra-installments').value = String(compra.installments || 1);
+        const isExempt = Boolean(compra.is_interest_exempt);
+        if ($('compra-is-exempt')) $('compra-is-exempt').checked = isExempt;
+        if ($('compra-applied-rate')) {
+          $('compra-applied-rate').value = isExempt ? '0.00' : String(Number(compra.applied_interest_rate || 0).toFixed(2));
+          $('compra-applied-rate').disabled = isExempt;
+          $('compra-applied-rate').style.cursor = isExempt ? 'not-allowed' : '';
+          $('compra-applied-rate').style.opacity = isExempt ? '0.6' : '';
+        }
+      } else if ($('compra-panel-credito')) {
+        $('compra-panel-credito').style.display = 'none';
+      }
+
       const tbody = $('compra-items-tbody');
       tbody.innerHTML = '';
       if (Array.isArray(compra.articulos) && compra.articulos.length > 0) {
         compra.articulos.forEach((art) => createCompraItemRow(art));
       } else {
         createCompraItemRow();
+      }
+
+      if (isCard) {
+        runLiveSimulation('compra');
       }
 
       $('compra-form-title').innerHTML = `<i class="fa-solid fa-pen" aria-hidden="true"></i><span>Editando Compra Detallada #${compra.id}</span>`;
@@ -1474,6 +1613,18 @@
       articulos: articulosPayload
     };
 
+    if (metodoPago === 'CREDITO') {
+      const cardVal = $('compra-card-id') ? $('compra-card-id').value : '';
+      const cardId = parseInt(cardVal, 10);
+      if (Number.isInteger(cardId) && cardId > 0) {
+        payload.payment_method = 'CREDIT_CARD';
+        payload.card_id = cardId;
+        payload.installments = Math.max(1, Math.min(48, parseInt($('compra-installments').value, 10) || 1));
+        payload.is_interest_exempt = Boolean($('compra-is-exempt') && $('compra-is-exempt').checked);
+        payload.applied_interest_rate = payload.is_interest_exempt ? 0 : (parseFloat($('compra-applied-rate').value) || 0);
+      }
+    }
+
     const btn = $('btn-compra-submit');
     setButtonLoading(btn, true, 'Procesando compra...');
     try {
@@ -1487,6 +1638,9 @@
         showBanner('compra-form-alert', 'success', 'Compra detallada registrada exitosamente.');
       }
       await loadCompras(AppState.comprasMeta.pagina || 1);
+      if (payload.card_id) {
+        await fetchCreditCardsMaster();
+      }
     } catch (err) {
       handleApiError(err, { formEl: form, alertContainerId: 'compra-form-alert' });
     } finally {
@@ -1548,36 +1702,55 @@
       return;
     }
 
-    tbody.innerHTML = AppState.compras.map((c) => `
-      <tr>
-        <td class="tabular-nums">#${c.id}</td>
-        <td class="tabular-nums">${escapeHtml(c.fecha)}</td>
-        <td><strong>${escapeHtml(c.comercio || '-')}</strong></td>
-        <td>${renderCategoryChip(c.categoria)}</td>
-        <td>${escapeHtml(c.descripcion || '-')}</td>
-        <td class="text-center">
-          <span class="badge badge-primary tabular-nums">
-            <i class="fa-solid fa-receipt" aria-hidden="true"></i>
-            <span>${c.cantidad_articulos || 0}</span>
+    tbody.innerHTML = AppState.compras.map((c) => {
+      const isCardPurchase = (c.metodo_pago === 'CREDITO' || c.card_id) && c.installments;
+      const cardInstallmentsBadge = isCardPurchase ? `
+        <div style="margin-top: 4px; display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+          <span class="badge badge-primary" title="${c.installments} cuotas">
+            <i class="fa-solid fa-credit-card" aria-hidden="true"></i>
+            <span>${c.installments} cuotas</span>
           </span>
-        </td>
-        <td>${renderMetodoPagoBadge(c.metodo_pago)}</td>
-        <td class="text-right amount-gasto">${formatCentavos(c.monto_centavos, 'GASTO')}</td>
-        <td class="text-center">
-          <div style="display: inline-flex; gap: 4px;">
-            <button type="button" class="btn btn-secondary btn-sm btn-icon-only" data-action="view-ticket" data-id="${c.id}" title="Ver ticket detallado" aria-label="Ver ticket detallado">
-              <i class="fa-solid fa-eye" aria-hidden="true"></i>
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm btn-icon-only" data-action="edit-compra" data-id="${c.id}" title="Editar compra" aria-label="Editar compra">
-              <i class="fa-solid fa-pen" aria-hidden="true"></i>
-            </button>
-            <button type="button" class="btn btn-danger btn-sm btn-icon-only" data-action="delete-compra" data-id="${c.id}" title="Eliminar compra" aria-label="Eliminar compra">
-              <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
-            </button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
+          ${c.is_interest_exempt
+            ? `<span class="badge badge-exempt" title="Compra exenta de intereses (0% interes)"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> [EXENTA 0%]</span>`
+            : `<span class="badge badge-interest" title="Tasa mensual: ${Number(c.applied_interest_rate || 0).toFixed(2)}% M.V."><i class="fa-solid fa-percent" aria-hidden="true"></i> [CON INTERES]</span>`
+          }
+        </div>
+      ` : '';
+
+      return `
+        <tr>
+          <td class="tabular-nums">#${c.id}</td>
+          <td class="tabular-nums">${escapeHtml(c.fecha)}</td>
+          <td><strong>${escapeHtml(c.comercio || '-')}</strong></td>
+          <td>${renderCategoryChip(c.categoria)}</td>
+          <td>${escapeHtml(c.descripcion || '-')}</td>
+          <td class="text-center">
+            <span class="badge badge-primary tabular-nums">
+              <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+              <span>${c.cantidad_articulos || 0}</span>
+            </span>
+          </td>
+          <td>
+            ${renderMetodoPagoBadge(c.metodo_pago)}
+            ${cardInstallmentsBadge}
+          </td>
+          <td class="text-right amount-gasto">${formatCentavos(c.monto_centavos, 'GASTO')}</td>
+          <td class="text-center">
+            <div style="display: inline-flex; gap: 4px;">
+              <button type="button" class="btn btn-secondary btn-sm btn-icon-only" data-action="view-ticket" data-id="${c.id}" title="Ver ticket detallado" aria-label="Ver ticket detallado">
+                <i class="fa-solid fa-eye" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm btn-icon-only" data-action="edit-compra" data-id="${c.id}" title="Editar compra" aria-label="Editar compra">
+                <i class="fa-solid fa-pen" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="btn btn-danger btn-sm btn-icon-only" data-action="delete-compra" data-id="${c.id}" title="Eliminar compra" aria-label="Eliminar compra">
+                <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 
   async function openTicketModal(compraId) {
@@ -1586,6 +1759,26 @@
       const compra = res.data;
       if (!compra) return;
       AppState.activeTicketCompraId = compra.id;
+
+      const isCard = (compra.metodo_pago === 'CREDITO' || compra.card_id) && compra.installments;
+      const cardBreakdownHtml = isCard ? `
+        <div style="grid-column: 1 / -1; margin-top: 8px; padding: 10px; background-color: var(--color-fondo); border: 1px solid var(--color-borde); border-radius: var(--radio-borde);">
+          <div style="font-weight: 700; font-size: 12px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <span><i class="fa-solid fa-credit-card" aria-hidden="true" style="margin-right: 6px;"></i> Financiacion con Tarjeta de Credito</span>
+            ${compra.is_interest_exempt
+              ? '<span class="badge badge-exempt"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> [EXENTA 0%]</span>'
+              : '<span class="badge badge-interest"><i class="fa-solid fa-percent" aria-hidden="true"></i> [CON INTERES]</span>'
+            }
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 12px;">
+            <div>Plazo: <strong>${compra.installments} cuotas</strong></div>
+            <div>Tasa Aplicada: <strong>${Number(compra.applied_interest_rate || 0).toFixed(2)}% M.V.</strong></div>
+            <div>Cuota Mensual: <strong class="tabular-nums">${formatCentavos(Math.round(Number(compra.monthly_installment_amount || 0) * 100), 'TOTAL_MONEDA')}</strong></div>
+            <div>Total Intereses: <strong class="tabular-nums" style="color: ${compra.is_interest_exempt ? 'var(--color-exito)' : 'var(--color-peligro)'};">${formatCentavos(Math.round(Number(compra.total_interest_amount || 0) * 100), 'TOTAL_MONEDA')}</strong></div>
+            <div style="grid-column: span 2;">Costo Final con Intereses: <strong class="tabular-nums">${formatCentavos(Math.round(Number(compra.total_with_interest || 0) * 100), 'TOTAL_MONEDA')}</strong></div>
+          </div>
+        </div>
+      ` : '';
 
       $('modal-ticket-header').innerHTML = `
         <div><strong>Comprobante ID:</strong> <span class="tabular-nums">#${compra.id}</span></div>
@@ -1596,6 +1789,7 @@
         <div><strong>Naturaleza:</strong> ${renderNaturalezaBadge(compra.naturaleza)}</div>
         <div style="grid-column: 1 / -1;"><strong>Descripcion:</strong> ${escapeHtml(compra.descripcion || '-')}</div>
         ${compra.notas ? `<div style="grid-column: 1 / -1;"><strong>Notas:</strong> ${escapeHtml(compra.notas)}</div>` : ''}
+        ${cardBreakdownHtml}
       `;
 
       const articulos = Array.isArray(compra.articulos) ? compra.articulos : [];
@@ -2056,6 +2250,442 @@
   }
 
   // =========================================================
+  // GESTION DE TARJETAS DE CREDITO Y SIMULADOR DE CUOTAS
+  // =========================================================
+
+  const simulationTimers = { tx: null, compra: null };
+
+  async function fetchCreditCardsMaster() {
+    try {
+      const res = await global.ApiClient.getCreditCards();
+      AppState.creditCards = Array.isArray(res.data) ? res.data : [];
+      populateCreditCardSelects();
+    } catch (_err) {
+      AppState.creditCards = [];
+      populateCreditCardSelects();
+    }
+  }
+
+  function populateCreditCardSelects() {
+    const selects = [$('tx-card-id'), $('compra-card-id')];
+    const cards = AppState.creditCards || [];
+
+    selects.forEach((sel) => {
+      if (!sel) return;
+      const currentVal = sel.value;
+      let html = '<option value="">-- Seleccionar Tarjeta de Credito --</option>';
+      cards.forEach((c) => {
+        const availCents = Math.round(Number(c.available_limit || 0) * 100);
+        const availFmt = formatCentavos(availCents, 'TOTAL_MONEDA');
+        html += `<option value="${c.id}" data-rate="${c.default_interest_rate || 0}">${escapeHtml(c.name)} - ${escapeHtml(c.bank)} (Disp: ${availFmt})</option>`;
+      });
+      sel.innerHTML = html;
+      if (currentVal && cards.some((c) => String(c.id) === String(currentVal))) {
+        sel.value = currentVal;
+      }
+    });
+  }
+
+  function runLiveSimulation(context) {
+    let amount = 0;
+    if (context === 'tx') {
+      const cents = parseDecimalToCentavos($('tx-monto') ? $('tx-monto').value : 0);
+      amount = Number.isFinite(cents) && cents > 0 ? cents / 100 : 0;
+    } else {
+      const cents = recalcCompraTotals();
+      amount = Number.isFinite(cents) && cents > 0 ? cents / 100 : 0;
+    }
+
+    const nInput = $(`${context}-installments`);
+    const n = Math.max(1, Math.min(48, parseInt(nInput ? nInput.value : 1, 10) || 1));
+    const isExempt = Boolean($(`${context}-is-exempt`) && $(`${context}-is-exempt`).checked);
+    const rateInput = $(`${context}-applied-rate`);
+    const rate = isExempt ? 0 : Math.max(0, Math.min(100, parseFloat(rateInput ? rateInput.value : 0) || 0));
+
+    // Calculo instantaneo con formula local
+    const local = global.AppUtils.simulateCreditPurchase(amount, n, rate, isExempt);
+    updateSimulationUi(context, local);
+
+    // Validacion y sincronizacion con el endpoint /api/v1/credit-cards/simulate
+    if (amount > 0) {
+      clearTimeout(simulationTimers[context]);
+      simulationTimers[context] = setTimeout(async () => {
+        try {
+          const res = await global.ApiClient.simulateCreditCard({
+            amount,
+            installments: n,
+            interest_rate: isExempt ? 0 : rate,
+            is_interest_exempt: isExempt
+          });
+          if (res && res.data) {
+            updateSimulationUi(context, res.data);
+          }
+        } catch (_err) {
+          // El calculo local ya esta visible
+        }
+      }, 250);
+    }
+  }
+
+  function updateSimulationUi(context, data) {
+    const cuotaEl = $(`${context}-sim-cuota`);
+    const intEl = $(`${context}-sim-intereses`);
+    const totEl = $(`${context}-sim-total`);
+    const tagEl = $(`${context}-sim-estado-tag`);
+
+    const cuotaCents = Math.round(Number(data.monthly_installment_amount || 0) * 100);
+    const intCents = Math.round(Number(data.total_interest_amount || 0) * 100);
+    const totCents = Math.round(Number(data.total_with_interest || 0) * 100);
+
+    if (cuotaEl) cuotaEl.textContent = formatCentavos(cuotaCents, 'TOTAL_MONEDA');
+    if (totEl) totEl.textContent = formatCentavos(totCents, 'TOTAL_MONEDA');
+
+    const isExempt = data.is_interest_exempt === true || intCents === 0;
+    if (intEl) {
+      if (isExempt) {
+        intEl.style.color = 'var(--color-exito)';
+        intEl.textContent = `${formatCentavos(0, 'TOTAL_MONEDA')} (Exenta)`;
+      } else {
+        intEl.style.color = 'var(--color-peligro)';
+        intEl.textContent = `+ ${formatCentavos(intCents, 'TOTAL_MONEDA')}`;
+      }
+    }
+    if (tagEl) {
+      if (isExempt) {
+        tagEl.className = 'badge badge-success';
+        tagEl.innerHTML = '<i class="fa-solid fa-shield-halved" aria-hidden="true"></i> [EXENTA 0%]';
+      } else {
+        tagEl.className = 'badge badge-warning';
+        tagEl.innerHTML = '<i class="fa-solid fa-percent" aria-hidden="true"></i> [CON INTERES]';
+      }
+    }
+  }
+
+  async function loadCreditCardsView() {
+    try {
+      await fetchCreditCardsMaster();
+      renderCreditCardsKpis();
+      renderCreditCardsCards();
+      renderCreditCardsTable();
+    } catch (err) {
+      handleApiError(err, { alertContainerId: 'tarjeta-form-alert' });
+    }
+  }
+
+  function renderCreditCardsKpis() {
+    const cards = AppState.creditCards || [];
+    let totalLimitCents = 0;
+    let totalAvailCents = 0;
+
+    cards.forEach((c) => {
+      totalLimitCents += Math.round(Number(c.credit_limit || 0) * 100);
+      totalAvailCents += Math.round(Number(c.available_limit || 0) * 100);
+    });
+
+    const totalUsedCents = Math.max(0, totalLimitCents - totalAvailCents);
+    const usedPct = totalLimitCents > 0 ? (totalUsedCents / totalLimitCents) * 100 : 0;
+    const availPct = totalLimitCents > 0 ? (totalAvailCents / totalLimitCents) * 100 : 100;
+
+    if ($('kpi-card-total-limit')) $('kpi-card-total-limit').textContent = formatCentavos(totalLimitCents, 'TOTAL_MONEDA');
+    if ($('kpi-card-count')) $('kpi-card-count').textContent = `${cards.length} tarjetas`;
+
+    if ($('kpi-card-used')) $('kpi-card-used').textContent = formatCentavos(totalUsedCents, 'TOTAL_MONEDA');
+    if ($('kpi-card-used-pct')) $('kpi-card-used-pct').textContent = `${usedPct.toFixed(2)} %`;
+
+    if ($('kpi-card-available')) $('kpi-card-available').textContent = formatCentavos(totalAvailCents, 'TOTAL_MONEDA');
+    if ($('kpi-card-avail-pct')) $('kpi-card-avail-pct').textContent = `${availPct.toFixed(2)} %`;
+
+    if (cards.length > 0) {
+      const sorted = [...cards].sort((a, b) => a.payment_day - b.payment_day);
+      const nextCard = sorted[0];
+      if ($('kpi-card-next-payment')) $('kpi-card-next-payment').textContent = `Dia ${nextCard.payment_day}`;
+      if ($('kpi-card-cutoff-info')) $('kpi-card-cutoff-info').textContent = `${escapeHtml(nextCard.name)} (Corte dia ${nextCard.cutoff_day})`;
+    } else {
+      if ($('kpi-card-next-payment')) $('kpi-card-next-payment').textContent = 'Dia -';
+      if ($('kpi-card-cutoff-info')) $('kpi-card-cutoff-info').textContent = 'Sin tarjetas registradas';
+    }
+  }
+
+  function renderCreditCardsCards() {
+    const container = $('tarjetas-cards-container');
+    if (!container) return;
+    const cards = AppState.creditCards || [];
+
+    if (cards.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state" style="grid-column: 1 / -1; background-color: var(--color-superficie); padding: 24px; border: 1px solid var(--color-borde); border-radius: var(--radio-borde); text-align: center;">
+          <i class="fa-solid fa-credit-card empty-state-icon" style="font-size: 32px; color: var(--color-texto-secundario); margin-bottom: 8px;" aria-hidden="true"></i>
+          <span class="empty-state-text" style="display: block; color: var(--color-texto-secundario);">No hay tarjetas de credito registradas. Utilice el formulario para crear la primera tarjeta.</span>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = cards.map((c) => {
+      const limitCents = Math.round(Number(c.credit_limit || 0) * 100);
+      const availCents = Math.round(Number(c.available_limit || 0) * 100);
+      const usedCents = Math.max(0, limitCents - availCents);
+      const usedPct = limitCents > 0 ? (usedCents / limitCents) * 100 : 0;
+
+      let fillClass = 'estado-NORMAL';
+      if (usedPct >= 80) fillClass = 'estado-EXCEDIDO';
+      else if (usedPct >= 50) fillClass = 'estado-ADVERTENCIA';
+
+      return `
+        <div class="credit-card-visual">
+          <div class="credit-card-header">
+            <div>
+              <div class="credit-card-bank">${escapeHtml(c.bank)}</div>
+              <div class="credit-card-name">
+                <i class="fa-solid fa-credit-card" aria-hidden="true" style="color: var(--color-primario-hover);"></i>
+                <span>${escapeHtml(c.name)}</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 4px;">
+              <button type="button" class="btn btn-secondary btn-sm btn-icon-only" data-action="edit-card" data-id="${c.id}" title="Editar tarjeta" aria-label="Editar tarjeta">
+                <i class="fa-solid fa-pen" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="btn btn-danger btn-sm btn-icon-only" data-action="delete-card" data-id="${c.id}" title="Eliminar tarjeta" aria-label="Eliminar tarjeta">
+                <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="credit-card-metrics">
+            <div>
+              <div class="credit-card-metric-title">Cupo Total</div>
+              <div class="credit-card-metric-num">${formatCentavos(limitCents, 'TOTAL_MONEDA')}</div>
+            </div>
+            <div>
+              <div class="credit-card-metric-title">Cupo Ocupado</div>
+              <div class="credit-card-metric-num amount-gasto">${formatCentavos(usedCents, 'TOTAL_MONEDA')}</div>
+            </div>
+            <div>
+              <div class="credit-card-metric-title">Disponible</div>
+              <div class="credit-card-metric-num amount-ingreso">${formatCentavos(availCents, 'TOTAL_MONEDA')}</div>
+            </div>
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; color: var(--color-texto-secundario);">
+              <span>Utilizacion del Cupo</span>
+              <span class="tabular-nums font-bold">${usedPct.toFixed(1)}%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill ${fillClass}" style="width: ${Math.min(100, Math.max(0, usedPct))}%;"></div>
+            </div>
+          </div>
+
+          <div class="credit-card-footer">
+            <span><i class="fa-solid fa-calendar-days" aria-hidden="true" style="margin-right: 4px;"></i> Corte: <strong>Dia ${c.cutoff_day}</strong> | Pago: <strong>Dia ${c.payment_day}</strong></span>
+            <span><i class="fa-solid fa-percent" aria-hidden="true" style="margin-right: 4px;"></i> <strong>${Number(c.default_interest_rate || 0).toFixed(2)}% M.V.</strong></span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderCreditCardsTable() {
+    const tbody = $('tarjetas-table-tbody');
+    if (!tbody) return;
+    const cards = AppState.creditCards || [];
+
+    if (cards.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8">
+            <div class="empty-state">
+              <i class="fa-solid fa-credit-card empty-state-icon" aria-hidden="true"></i>
+              <span class="empty-state-text">No hay tarjetas de credito para mostrar.</span>
+            </div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = cards.map((c) => {
+      const limitCents = Math.round(Number(c.credit_limit || 0) * 100);
+      const availCents = Math.round(Number(c.available_limit || 0) * 100);
+      const usedCents = Math.max(0, limitCents - availCents);
+
+      return `
+        <tr>
+          <td class="tabular-nums">#${c.id}</td>
+          <td>
+            <strong>${escapeHtml(c.name)}</strong>
+            <div style="font-size: 11px; color: var(--color-texto-secundario);">${escapeHtml(c.bank)}</div>
+          </td>
+          <td class="text-right tabular-nums">${formatCentavos(limitCents, 'TOTAL_MONEDA')}</td>
+          <td class="text-right tabular-nums amount-gasto">${formatCentavos(usedCents, 'TOTAL_MONEDA')}</td>
+          <td class="text-right tabular-nums amount-ingreso">${formatCentavos(availCents, 'TOTAL_MONEDA')}</td>
+          <td class="text-center">
+            <span class="badge badge-neutral">
+              <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
+              <span>Corte: ${c.cutoff_day} / Pago: ${c.payment_day}</span>
+            </span>
+          </td>
+          <td class="text-right tabular-nums">
+            <span class="badge badge-primary">
+              <i class="fa-solid fa-percent" aria-hidden="true"></i>
+              <span>${Number(c.default_interest_rate || 0).toFixed(2)}% M.V.</span>
+            </span>
+          </td>
+          <td class="text-center">
+            <div style="display: inline-flex; gap: 4px;">
+              <button type="button" class="btn btn-secondary btn-sm btn-icon-only" data-action="edit-card" data-id="${c.id}" title="Editar tarjeta" aria-label="Editar tarjeta">
+                <i class="fa-solid fa-pen" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="btn btn-danger btn-sm btn-icon-only" data-action="delete-card" data-id="${c.id}" title="Eliminar tarjeta" aria-label="Eliminar tarjeta">
+                <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function startEditCreditCard(card) {
+    if (!card) return;
+    const form = $('form-tarjeta');
+    clearFormErrors(form);
+    hideBanner('tarjeta-form-alert');
+    $('tarjeta-id').value = String(card.id);
+    $('tarjeta-name').value = card.name || '';
+    $('tarjeta-bank').value = card.bank || '';
+    $('tarjeta-limit').value = Number(card.credit_limit || 0).toFixed(2);
+    $('tarjeta-rate').value = Number(card.default_interest_rate || 0).toFixed(2);
+    $('tarjeta-cutoff').value = String(card.cutoff_day || 15);
+    $('tarjeta-payment').value = String(card.payment_day || 5);
+    $('tarjeta-form-title').innerHTML = `<i class="fa-solid fa-pen" aria-hidden="true"></i><span>Editar Tarjeta #${card.id}</span>`;
+    $('btn-tarjeta-submit-label').textContent = 'Guardar Cambios';
+    $('btn-tarjeta-cancel-edit').style.display = 'inline-flex';
+    form.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function resetTarjetaForm() {
+    const form = $('form-tarjeta');
+    if (!form) return;
+    clearFormErrors(form);
+    hideBanner('tarjeta-form-alert');
+    $('tarjeta-id').value = '';
+    $('tarjeta-name').value = '';
+    $('tarjeta-bank').value = '';
+    $('tarjeta-limit').value = '';
+    $('tarjeta-rate').value = '';
+    $('tarjeta-cutoff').value = '';
+    $('tarjeta-payment').value = '';
+    $('tarjeta-form-title').innerHTML = `<i class="fa-solid fa-plus" aria-hidden="true"></i><span>Registrar Nueva Tarjeta</span>`;
+    $('btn-tarjeta-submit-label').textContent = 'Guardar Tarjeta';
+    $('btn-tarjeta-cancel-edit').style.display = 'none';
+  }
+
+  async function submitTarjetaForm(ev) {
+    ev.preventDefault();
+    const form = $('form-tarjeta');
+    clearFormErrors(form);
+    hideBanner('tarjeta-form-alert');
+
+    const id = $('tarjeta-id').value.trim();
+    const name = $('tarjeta-name').value.trim();
+    const bank = $('tarjeta-bank').value.trim();
+    const limitNum = parseFloat($('tarjeta-limit').value);
+    const rateNum = parseFloat($('tarjeta-rate').value);
+    const cutoffNum = parseInt($('tarjeta-cutoff').value, 10);
+    const paymentNum = parseInt($('tarjeta-payment').value, 10);
+
+    let hasError = false;
+    if (!name || name.length > 80) {
+      applyFieldError(form, 'name', 'El nombre es obligatorio (1 a 80 caracteres).');
+      hasError = true;
+    } else if (containsEmoji(name)) {
+      applyFieldError(form, 'name', 'El nombre no puede contener emojis.');
+      hasError = true;
+    }
+
+    if (!bank || bank.length > 80) {
+      applyFieldError(form, 'bank', 'El banco es obligatorio (1 a 80 caracteres).');
+      hasError = true;
+    } else if (containsEmoji(bank)) {
+      applyFieldError(form, 'bank', 'El banco no puede contener emojis.');
+      hasError = true;
+    }
+
+    if (!Number.isFinite(limitNum) || limitNum <= 0 || limitNum > 999999999999) {
+      applyFieldError(form, 'credit_limit', 'El cupo debe ser un numero mayor a 0.');
+      hasError = true;
+    }
+
+    if (!Number.isFinite(rateNum) || rateNum < 0 || rateNum > 100) {
+      applyFieldError(form, 'default_interest_rate', 'La tasa debe ser un numero entre 0 y 100.');
+      hasError = true;
+    }
+
+    if (!Number.isInteger(cutoffNum) || cutoffNum < 1 || cutoffNum > 31) {
+      applyFieldError(form, 'cutoff_day', 'El dia de corte debe estar entre 1 y 31.');
+      hasError = true;
+    }
+
+    if (!Number.isInteger(paymentNum) || paymentNum < 1 || paymentNum > 31) {
+      applyFieldError(form, 'payment_day', 'El dia limite de pago debe estar entre 1 y 31.');
+      hasError = true;
+    }
+
+    if (hasError) return;
+
+    // JSON exacto requerido: { name, bank, credit_limit, default_interest_rate, cutoff_day, payment_day }
+    const payload = {
+      name,
+      bank,
+      credit_limit: Number(limitNum.toFixed(2)),
+      default_interest_rate: Number(rateNum.toFixed(2)),
+      cutoff_day: cutoffNum,
+      payment_day: paymentNum
+    };
+
+    const btn = $('btn-tarjeta-submit');
+    setButtonLoading(btn, true, 'Guardando...');
+
+    try {
+      if (id) {
+        await global.ApiClient.updateCreditCard(id, payload);
+        showBanner('tarjeta-form-alert', 'success', 'Tarjeta de credito actualizada exitosamente.');
+      } else {
+        await global.ApiClient.createCreditCard(payload);
+        showBanner('tarjeta-form-alert', 'success', 'Tarjeta de credito registrada exitosamente.');
+      }
+      resetTarjetaForm();
+      await loadCreditCardsView();
+    } catch (err) {
+      handleApiError(err, { formEl: form, alertContainerId: 'tarjeta-form-alert' });
+    } finally {
+      setButtonLoading(btn, false);
+    }
+  }
+
+  function handleDeleteCreditCard(id) {
+    const card = AppState.creditCards.find((c) => c.id === id);
+    const cardName = card ? `"${card.name} (${card.bank})"` : `#${id}`;
+    openConfirmModal(
+      `Esta accion eliminara la tarjeta de credito ${cardName}. Desea continuar?`,
+      async () => {
+        try {
+          await global.ApiClient.deleteCreditCard(id);
+          showBanner('tarjeta-form-alert', 'success', 'Tarjeta de credito eliminada exitosamente.');
+          await loadCreditCardsView();
+        } catch (err) {
+          if (err && (err.status === 409 || err.codigo === 'TARJETA_EN_USO')) {
+            showBanner('tarjeta-form-alert', 'danger', 'No se puede eliminar la tarjeta porque tiene transacciones contables asociadas.');
+          } else {
+            handleApiError(err, { alertContainerId: 'tarjeta-form-alert' });
+          }
+        }
+      }
+    );
+  }
+
+  // =========================================================
   // 6. PANTALLA: ASESOR FINANCIERO IA (GEMINI + DICTADO EN TEXTO LIBRE)
   // =========================================================
 
@@ -2502,6 +3132,7 @@
           async () => {
             await global.ApiClient.deleteTransaccion(id);
             await loadTransacciones(AppState.transaccionesMeta.pagina || 1);
+            await fetchCreditCardsMaster();
           }
         );
       }
@@ -2749,6 +3380,188 @@
         loadCompraIntoEditor(id);
       }
     });
+
+    // =========================================================
+    // EVENTOS: MODULO DE TARJETAS DE CREDITO
+    // =========================================================
+
+    if ($('form-tarjeta')) {
+      $('form-tarjeta').addEventListener('submit', submitTarjetaForm);
+    }
+    if ($('btn-tarjeta-cancel-edit')) {
+      $('btn-tarjeta-cancel-edit').addEventListener('click', () => resetTarjetaForm());
+    }
+    if ($('btn-tarjetas-reload')) {
+      $('btn-tarjetas-reload').addEventListener('click', () => loadCreditCardsView());
+    }
+
+    // Acciones de tarjetas en vista tipo panel / cards
+    if ($('tarjetas-cards-container')) {
+      $('tarjetas-cards-container').addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+        const id = Number(btn.dataset.id);
+        const action = btn.dataset.action;
+        const card = (AppState.creditCards || []).find((c) => c.id === id);
+
+        if (action === 'edit-card' && card) {
+          startEditCreditCard(card);
+        } else if (action === 'delete-card') {
+          handleDeleteCreditCard(id);
+        }
+      });
+    }
+
+    // Acciones de tarjetas en vista tipo tabla
+    if ($('tarjetas-table-tbody')) {
+      $('tarjetas-table-tbody').addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+        const id = Number(btn.dataset.id);
+        const action = btn.dataset.action;
+        const card = (AppState.creditCards || []).find((c) => c.id === id);
+
+        if (action === 'edit-card' && card) {
+          startEditCreditCard(card);
+        } else if (action === 'delete-card') {
+          handleDeleteCreditCard(id);
+        }
+      });
+    }
+
+    // =========================================================
+    // EVENTOS: PANEL CONTABLE DE CUOTAS EN FORM-TRANSACCION
+    // =========================================================
+
+    function syncTxCreditCardPanel() {
+      const isCredit = $('tx-metodo-pago') && $('tx-metodo-pago').value === 'CREDITO' &&
+                       $('tx-tipo') && $('tx-tipo').value === 'GASTO';
+      if ($('tx-panel-credito')) {
+        $('tx-panel-credito').style.display = isCredit ? 'block' : 'none';
+      }
+      if (isCredit) {
+        runLiveSimulation('tx');
+      }
+    }
+
+    if ($('tx-metodo-pago')) {
+      $('tx-metodo-pago').addEventListener('change', syncTxCreditCardPanel);
+    }
+    if ($('tx-tipo')) {
+      $('tx-tipo').addEventListener('change', syncTxCreditCardPanel);
+    }
+
+    if ($('tx-card-id')) {
+      $('tx-card-id').addEventListener('change', (e) => {
+        const cardId = Number(e.target.value);
+        const card = (AppState.creditCards || []).find((c) => c.id === cardId);
+        if (card && $('tx-applied-rate') && (!$('tx-is-exempt') || !$('tx-is-exempt').checked)) {
+          $('tx-applied-rate').value = Number(card.default_interest_rate || 0).toFixed(2);
+        }
+        runLiveSimulation('tx');
+      });
+    }
+
+    if ($('tx-is-exempt')) {
+      $('tx-is-exempt').addEventListener('change', (e) => {
+        const isExempt = e.target.checked;
+        if ($('tx-applied-rate')) {
+          if (isExempt) {
+            $('tx-applied-rate').value = '0.00';
+            $('tx-applied-rate').disabled = true;
+            $('tx-applied-rate').style.cursor = 'not-allowed';
+            $('tx-applied-rate').style.opacity = '0.6';
+          } else {
+            $('tx-applied-rate').disabled = false;
+            $('tx-applied-rate').style.cursor = '';
+            $('tx-applied-rate').style.opacity = '';
+            const cardId = Number($('tx-card-id') ? $('tx-card-id').value : 0);
+            const card = (AppState.creditCards || []).find((c) => c.id === cardId);
+            $('tx-applied-rate').value = card ? Number(card.default_interest_rate || 0).toFixed(2) : '0.00';
+          }
+        }
+        runLiveSimulation('tx');
+      });
+    }
+
+    if ($('tx-installments')) {
+      $('tx-installments').addEventListener('input', () => runLiveSimulation('tx'));
+      $('tx-installments').addEventListener('change', () => runLiveSimulation('tx'));
+    }
+
+    if ($('tx-applied-rate')) {
+      $('tx-applied-rate').addEventListener('input', () => runLiveSimulation('tx'));
+      $('tx-applied-rate').addEventListener('change', () => runLiveSimulation('tx'));
+    }
+
+    if ($('tx-monto')) {
+      $('tx-monto').addEventListener('input', () => {
+        if ($('tx-panel-credito') && $('tx-panel-credito').style.display !== 'none') {
+          runLiveSimulation('tx');
+        }
+      });
+    }
+
+    // =========================================================
+    // EVENTOS: PANEL CONTABLE DE CUOTAS EN FORM-COMPRA
+    // =========================================================
+
+    function syncCompraCreditCardPanel() {
+      const isCredit = $('compra-metodo-pago') && $('compra-metodo-pago').value === 'CREDITO';
+      if ($('compra-panel-credito')) {
+        $('compra-panel-credito').style.display = isCredit ? 'block' : 'none';
+      }
+      if (isCredit) {
+        runLiveSimulation('compra');
+      }
+    }
+
+    if ($('compra-metodo-pago')) {
+      $('compra-metodo-pago').addEventListener('change', syncCompraCreditCardPanel);
+    }
+
+    if ($('compra-card-id')) {
+      $('compra-card-id').addEventListener('change', (e) => {
+        const cardId = Number(e.target.value);
+        const card = (AppState.creditCards || []).find((c) => c.id === cardId);
+        if (card && $('compra-applied-rate') && (!$('compra-is-exempt') || !$('compra-is-exempt').checked)) {
+          $('compra-applied-rate').value = Number(card.default_interest_rate || 0).toFixed(2);
+        }
+        runLiveSimulation('compra');
+      });
+    }
+
+    if ($('compra-is-exempt')) {
+      $('compra-is-exempt').addEventListener('change', (e) => {
+        const isExempt = e.target.checked;
+        if ($('compra-applied-rate')) {
+          if (isExempt) {
+            $('compra-applied-rate').value = '0.00';
+            $('compra-applied-rate').disabled = true;
+            $('compra-applied-rate').style.cursor = 'not-allowed';
+            $('compra-applied-rate').style.opacity = '0.6';
+          } else {
+            $('compra-applied-rate').disabled = false;
+            $('compra-applied-rate').style.cursor = '';
+            $('compra-applied-rate').style.opacity = '';
+            const cardId = Number($('compra-card-id') ? $('compra-card-id').value : 0);
+            const card = (AppState.creditCards || []).find((c) => c.id === cardId);
+            $('compra-applied-rate').value = card ? Number(card.default_interest_rate || 0).toFixed(2) : '0.00';
+          }
+        }
+        runLiveSimulation('compra');
+      });
+    }
+
+    if ($('compra-installments')) {
+      $('compra-installments').addEventListener('input', () => runLiveSimulation('compra'));
+      $('compra-installments').addEventListener('change', () => runLiveSimulation('compra'));
+    }
+
+    if ($('compra-applied-rate')) {
+      $('compra-applied-rate').addEventListener('input', () => runLiveSimulation('compra'));
+      $('compra-applied-rate').addEventListener('change', () => runLiveSimulation('compra'));
+    }
   }
 
   async function bootstrap() {
@@ -2760,6 +3573,7 @@
     resetCompraForm();
     resetPresupuestoForm();
     resetCategoriaForm();
+    resetTarjetaForm();
     bindEvents();
     await checkServerHealth(false);
     await loadDashboard();
