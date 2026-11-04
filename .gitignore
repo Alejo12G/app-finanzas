@@ -1,0 +1,23 @@
+# Dependencias y builds
+node_modules/
+build/
+dist/
+.gradle/
+local.properties
+*.apk
+*.aab
+__pycache__/
+.venv/
+
+# Secretos y datos
+.env
+*.db
+*.db-wal
+*.db-shm
+/backend-vps/data/
+
+# Sistema / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
