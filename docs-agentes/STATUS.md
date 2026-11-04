@@ -8,7 +8,7 @@
 | Componente | Agente | Carpeta | Rama de trabajo | Estado | Ultima actualizacion | Notas |
 |---|---|---|---|---|---|---|
 | Backend | Agente Backend | `/backend-vps` | `feature/ciclos-pago-tarjetas` | COMPLETADO | 2026-11-04 | Ciclos reales de corte y pago (corte > pago -> mes siguiente), calculo automatico de fechas de facturacion, saldo de extracto, pago minimo y pago total en `CreditCard`, endpoints `POST/GET /api/v1/credit-cards/{id}/payments` para registro de pagos con generacion automatica de transaccion contable, y tests unitarios y de contrato superados |
-| PC | Agente PC | `/pc-app` | `feature/tarjetas-credito` | COMPLETADO | 2026-11-03 | Cliente de escritorio Node.js ultraligero con modulo completo de Tarjetas de Credito (`/api/v1/credit-cards`), visualizacion de cupos y fechas de corte/pago, panel contable de compras a cuotas con simulador en tiempo real (exencion 0% o tasa M.V.), etiquetas e indicadores clasicos FontAwesome `[EXENTA 0%]` y `[CON INTERES]`, y cero emojis |
+| PC | Agente PC | `/pc-app` | `feature/tarjetas-pagos-pc` | COMPLETADO | 2026-11-04 | Visualizacion de fechas reales de facturacion (proximo corte y limite de pago con alerta ambar <= 3 dias), bloque de Pago del Periodo (pago minimo, pago total 0% interes y deuda total), botones de accion directa y modal contable de pago de tarjeta sincronizado con POST /api/v1/credit-cards/{id}/payments |
 | Android | Agente Android | `/android-app` | `feature/tarjetas-credito` | COMPLETADO | 2026-11-03 | Cliente Android nativo en Java puro (cero dependencias pesadas), sistema de Temas (Modo Oscuro Clasico por defecto + Modo Claro), gestion completa de Tarjetas de Credito (`/api/v1/credit-cards`, `CreditCard.java`, `TarjetasView`, `CreditCardFormDialog`) y registro de compras a cuotas con tarjeta (`CREDIT_CARD`) en `POST /api/v1/transactions` con opcion exenta de intereses (`is_interest_exempt`) y calculo contable en vivo (`CreditCalculator.java`) |
 
 ### Estados permitidos
@@ -60,6 +60,9 @@
 | Tarjetas de Credito (CRUD, vista, KPIs y paneles de cupos) | COMPLETADO |
 | Panel de compras a cuotas con simulador en tiempo real y exencion de intereses 0% | COMPLETADO |
 | Indicadores de cuotas y etiquetas [EXENTA 0%] / [CON INTERES] en movimientos y ticket | COMPLETADO |
+| Visualizacion de fechas de facturacion (proximo corte y limite de pago con alerta ambar <= 3 dias) | COMPLETADO |
+| Bloque de Pago del Periodo (pago minimo, pago total 0% interes y deuda total) | COMPLETADO |
+| Modal y botones de pago de tarjeta sincronizados con POST /credit-cards/{id}/payments | COMPLETADO |
 | Asesor IA | COMPLETADO |
 | Configuracion / estado de conexion | COMPLETADO |
 

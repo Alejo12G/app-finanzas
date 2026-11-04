@@ -1863,6 +1863,93 @@
     </div>
   </div>
 
+  <!-- =========================================================
+       MODAL 3: PAGO DE TARJETA DE CREDITO (API_CONTRACT.md 11.2)
+       ========================================================= -->
+  <div id="modal-pago-tarjeta" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-pago-tarjeta-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-pago-tarjeta-title" class="modal-title">
+          <i class="fa-solid fa-money-bill-wave" aria-hidden="true"></i>
+          <span>Registrar Pago de Tarjeta de Credito</span>
+        </h3>
+        <button type="button" id="btn-modal-pago-tarjeta-close" class="modal-close-btn" aria-label="Cerrar dialogo">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </div>
+      <form id="form-pago-tarjeta" novalidate>
+        <div class="modal-body">
+          <div id="modal-pago-tarjeta-alert" style="display: none; margin-bottom: 12px;"></div>
+          <input type="hidden" id="pago-tarjeta-id" value="" />
+          <input type="hidden" id="pago-tarjeta-type" value="MINIMO" />
+
+          <!-- Resumen de la Tarjeta Seleccionada -->
+          <div class="receipt-header" style="margin-bottom: 12px;">
+            <div>
+              <span style="font-size: 11px; color: var(--color-texto-secundario); display: block;">Tarjeta a Pagar:</span>
+              <strong id="pago-tarjeta-name" style="font-size: 15px; color: var(--color-texto);">-</strong>
+              <div id="pago-tarjeta-bank" style="font-size: 12px; color: var(--color-texto-secundario);">-</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--color-texto-secundario); display: block;">Deuda Total Pendiente:</span>
+              <strong id="pago-tarjeta-total-debt" class="amount-gasto tabular-nums" style="font-size: 15px;">COP 0.00</strong>
+              <div id="pago-tarjeta-period-info" style="font-size: 11px; color: var(--color-texto-secundario);">-</div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label class="form-label" for="pago-tarjeta-amount">Monto a Abonar (<span class="currency-unit-label">COP</span>) *</label>
+              <input type="number" id="pago-tarjeta-amount" name="amount" class="form-control tabular-nums" step="0.01" min="0.01" placeholder="0.00" required />
+              <span class="field-error" data-error-for="amount"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="pago-tarjeta-method">Cuenta / Metodo de Pago *</label>
+              <select id="pago-tarjeta-method" name="payment_method" class="form-control" required>
+                <option value="DEBITO">Tarjeta de debito</option>
+                <option value="TRANSFERENCIA">Transferencia</option>
+                <option value="EFECTIVO">Efectivo</option>
+                <option value="OTRO">Otro</option>
+              </select>
+              <span class="field-error" data-error-for="payment_method"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="pago-tarjeta-date">Fecha de Pago *</label>
+              <input type="date" id="pago-tarjeta-date" name="date" class="form-control tabular-nums" required />
+              <span class="field-error" data-error-for="date"></span>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label" for="pago-tarjeta-notes">Notas / Referencia (Opcional, max 500 caracteres)</label>
+              <input type="text" id="pago-tarjeta-notes" name="notes" class="form-control" maxlength="500" placeholder="Ej. Pago cuota Noviembre - Ref 8492" />
+              <span class="field-error" data-error-for="notes"></span>
+            </div>
+
+            <div class="form-group full-width" style="margin-top: 4px;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: var(--color-texto);">
+                <input type="checkbox" id="pago-tarjeta-create-tx" checked />
+                <span>Generar gasto contable automatico en Transacciones (Categoria Deudas y prestamos)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btn-modal-pago-tarjeta-cancel" class="btn btn-secondary">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            <span>Cancelar</span>
+          </button>
+          <button type="submit" id="btn-modal-pago-tarjeta-submit" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+            <span id="btn-modal-pago-tarjeta-submit-label">Registrar Pago</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Chart.js CDN (Especificacion PC) con respaldo local automatico -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
   <script>

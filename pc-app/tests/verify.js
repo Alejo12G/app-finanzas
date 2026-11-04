@@ -261,12 +261,37 @@ async function runTests() {
   assert(htmlContent.includes('id="compra-panel-credito"'), 'index.html debe contener compra-panel-credito');
   assert(htmlContent.includes('id="tx-simulador-box"'), 'index.html debe contener tx-simulador-box');
   assert(htmlContent.includes('id="compra-simulador-box"'), 'index.html debe contener compra-simulador-box');
+  assert(htmlContent.includes('id="modal-pago-tarjeta"'), 'index.html debe contener modal-pago-tarjeta');
+  assert(htmlContent.includes('id="form-pago-tarjeta"'), 'index.html debe contener form-pago-tarjeta');
+  assert(htmlContent.includes('id="pago-tarjeta-amount"'), 'index.html debe contener pago-tarjeta-amount');
+  assert(htmlContent.includes('id="pago-tarjeta-method"'), 'index.html debe contener pago-tarjeta-method');
+  assert(htmlContent.includes('id="pago-tarjeta-date"'), 'index.html debe contener pago-tarjeta-date');
+  assert(htmlContent.includes('id="pago-tarjeta-create-tx"'), 'index.html debe contener pago-tarjeta-create-tx');
   assert(htmlContent.includes('fa-solid fa-credit-card'), 'Debe usar fa-solid fa-credit-card');
   assert(htmlContent.includes('fa-solid fa-percent'), 'Debe usar fa-solid fa-percent');
   assert(htmlContent.includes('fa-solid fa-calendar-days'), 'Debe usar fa-solid fa-calendar-days');
   assert(htmlContent.includes('fa-solid fa-shield-halved'), 'Debe usar fa-solid fa-shield-halved');
+  assert(htmlContent.includes('fa-money-bill-wave'), 'Debe usar fa-money-bill-wave');
 
-  // 8.3 Validacion de endpoints de ApiClient para credit-cards contra mock server
+  const appJsContent = fs.readFileSync(path.join(pcAppRoot, 'public', 'js', 'app.js'), 'utf8');
+  assert(appJsContent.includes('fa-calendar-check'), 'app.js debe usar icono fa-calendar-check para limite de pago');
+  assert(appJsContent.includes('fa-calendar'), 'app.js debe usar icono fa-calendar para proximo corte');
+  assert(appJsContent.includes('#D97706'), 'app.js debe incluir advertencia ambar #D97706');
+
+  // 8.3 Validacion de utilidades de fecha y moneda para tarjetas
+  const { formatCurrency, getDaysUntilDate } = global.AppUtils;
+  assert.strictEqual(typeof formatCurrency, 'function', 'formatCurrency debe ser una funcion');
+  assert.strictEqual(typeof getDaysUntilDate, 'function', 'getDaysUntilDate debe ser una funcion');
+  assert(formatCurrency(150000).includes('150,000.00'), 'formatCurrency debe formatear monto contable');
+
+  const d2 = new Date();
+  d2.setDate(d2.getDate() + 2);
+  const d2Str = `${d2.getFullYear()}-${String(d2.getMonth() + 1).padStart(2, '0')}-${String(d2.getDate()).padStart(2, '0')}`;
+  const daysDiff = getDaysUntilDate(d2Str);
+  assert.strictEqual(daysDiff, 2, 'getDaysUntilDate debe calcular 2 dias de diferencia');
+  assert(daysDiff <= 3, 'Fecha a 2 dias debe activar advertencia ambar (<= 3 dias)');
+
+  // 8.4 Validacion de endpoints de ApiClient para credit-cards contra mock server
   const mockCardServer = http.createServer((req, res) => {
     let raw = '';
     req.on('data', (c) => { raw += c; });
@@ -288,7 +313,12 @@ async function runTests() {
               available_limit: 4500000,
               default_interest_rate: 2.15,
               cutoff_day: 15,
-              payment_day: 5
+              payment_day: 5,
+              next_cutoff_date: '2026-11-15',
+              next_payment_date: d2Str,
+              minimum_payment: 50000,
+              full_payment: 500000,
+              total_debt: 500000
             }
           ]
         }));
@@ -315,6 +345,43 @@ async function runTests() {
             total_with_interest: 1077331.32,
             amortization_table: []
           }
+        }));
+        return;
+      }
+
+      if (url === '/api/v1/credit-cards/1/payments' && method === 'POST') {
+        assert(req.headers['x-app-private-token'], 'Debe enviar header X-App-Private-Token');
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          ok: true,
+          data: {
+            id: 101,
+            card_id: 1,
+            amount: body.amount,
+            payment_type: body.payment_type,
+            payment_method: body.payment_method,
+            date: body.date,
+            transaction_id: body.create_transaction ? 501 : null
+          }
+        }));
+        return;
+      }
+
+      if (url === '/api/v1/credit-cards/1/payments' && method === 'GET') {
+        assert(req.headers['x-app-private-token'], 'Debe enviar header X-App-Private-Token');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          ok: true,
+          data: [
+            {
+              id: 101,
+              card_id: 1,
+              amount: 50000,
+              payment_type: 'MINIMO',
+              payment_method: 'DEBITO',
+              date: '2026-11-04'
+            }
+          ]
         }));
         return;
       }
@@ -365,6 +432,28 @@ async function runTests() {
     assert.strictEqual(simRes.ok, true);
     assert.strictEqual(simRes.data.monthly_installment_amount, 179555.22);
     assert.strictEqual(simRes.data.total_interest_amount, 77331.32);
+
+    // Registro de pago de tarjeta (API_CONTRACT.md 11.2)
+    assert.strictEqual(typeof global.api.creditCards.pay, 'function');
+    assert.strictEqual(typeof global.api.creditCards.getPayments, 'function');
+
+    const payRes = await global.api.creditCards.pay(1, {
+      amount: 150000,
+      payment_type: 'MINIMO',
+      payment_method: 'DEBITO',
+      date: '2026-11-04',
+      notes: 'Pago cuota sin emojis',
+      create_transaction: true
+    });
+    assert.strictEqual(payRes.ok, true);
+    assert.strictEqual(payRes.data.amount, 150000);
+    assert.strictEqual(payRes.data.payment_type, 'MINIMO');
+    assert.strictEqual(payRes.data.transaction_id, 501);
+
+    const histRes = await global.api.creditCards.getPayments(1);
+    assert.strictEqual(histRes.ok, true);
+    assert.strictEqual(histRes.data.length, 1);
+    assert.strictEqual(histRes.data[0].amount, 50000);
 
     const delRes = await global.ApiClient.deleteCreditCard(1);
     assert.strictEqual(delRes.ok, true);

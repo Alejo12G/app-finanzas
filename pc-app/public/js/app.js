@@ -20,6 +20,8 @@
     parseDecimalToCentavos,
     centavosToDecimalInput,
     formatCentavos,
+    formatCurrency,
+    getDaysUntilDate,
     getTodayIso,
     getCurrentPeriod,
     formatShortMonthYear,
@@ -2376,13 +2378,17 @@
     const cards = AppState.creditCards || [];
     let totalLimitCents = 0;
     let totalAvailCents = 0;
+    let totalDebtCents = 0;
 
     cards.forEach((c) => {
       totalLimitCents += Math.round(Number(c.credit_limit || 0) * 100);
       totalAvailCents += Math.round(Number(c.available_limit || 0) * 100);
+      if (typeof c.total_debt === 'number') {
+        totalDebtCents += Math.round(c.total_debt * 100);
+      }
     });
 
-    const totalUsedCents = Math.max(0, totalLimitCents - totalAvailCents);
+    const totalUsedCents = totalDebtCents > 0 ? totalDebtCents : Math.max(0, totalLimitCents - totalAvailCents);
     const usedPct = totalLimitCents > 0 ? (totalUsedCents / totalLimitCents) * 100 : 0;
     const availPct = totalLimitCents > 0 ? (totalAvailCents / totalLimitCents) * 100 : 100;
 
@@ -2396,12 +2402,35 @@
     if ($('kpi-card-avail-pct')) $('kpi-card-avail-pct').textContent = `${availPct.toFixed(2)} %`;
 
     if (cards.length > 0) {
-      const sorted = [...cards].sort((a, b) => a.payment_day - b.payment_day);
+      // Ordenar por fecha de pago mas proxima si esta disponible
+      const sorted = [...cards].sort((a, b) => {
+        if (a.next_payment_date && b.next_payment_date) {
+          return a.next_payment_date.localeCompare(b.next_payment_date);
+        }
+        return a.payment_day - b.payment_day;
+      });
       const nextCard = sorted[0];
-      if ($('kpi-card-next-payment')) $('kpi-card-next-payment').textContent = `Dia ${nextCard.payment_day}`;
-      if ($('kpi-card-cutoff-info')) $('kpi-card-cutoff-info').textContent = `${escapeHtml(nextCard.name)} (Corte dia ${nextCard.cutoff_day})`;
+      const daysUntil = nextCard.next_payment_date ? getDaysUntilDate(nextCard.next_payment_date) : null;
+      const isDueWarning = daysUntil !== null && daysUntil <= 3;
+
+      if ($('kpi-card-next-payment')) {
+        $('kpi-card-next-payment').textContent = nextCard.next_payment_date || `Dia ${nextCard.payment_day}`;
+        if (isDueWarning) {
+          $('kpi-card-next-payment').style.color = '#D97706';
+        } else {
+          $('kpi-card-next-payment').style.color = '';
+        }
+      }
+      if ($('kpi-card-cutoff-info')) {
+        const cutoffText = nextCard.next_cutoff_date ? `Corte ${nextCard.next_cutoff_date}` : `Corte dia ${nextCard.cutoff_day}`;
+        const warningSuffix = isDueWarning ? ` (Vence en ${daysUntil <= 0 ? '0' : daysUntil} dias)` : '';
+        $('kpi-card-cutoff-info').textContent = `${escapeHtml(nextCard.name)} (${cutoffText})${warningSuffix}`;
+      }
     } else {
-      if ($('kpi-card-next-payment')) $('kpi-card-next-payment').textContent = 'Dia -';
+      if ($('kpi-card-next-payment')) {
+        $('kpi-card-next-payment').textContent = 'Dia -';
+        $('kpi-card-next-payment').style.color = '';
+      }
       if ($('kpi-card-cutoff-info')) $('kpi-card-cutoff-info').textContent = 'Sin tarjetas registradas';
     }
   }
@@ -2430,6 +2459,15 @@
       let fillClass = 'estado-NORMAL';
       if (usedPct >= 80) fillClass = 'estado-EXCEDIDO';
       else if (usedPct >= 50) fillClass = 'estado-ADVERTENCIA';
+
+      const totalDebt = typeof c.total_debt === 'number' ? c.total_debt : (usedCents / 100);
+      const minPayment = typeof c.minimum_payment === 'number' ? c.minimum_payment : 0;
+      const fullPayment = typeof c.full_payment === 'number' ? c.full_payment : totalDebt;
+      const cutoffDisplay = c.next_cutoff_date || `Dia ${c.cutoff_day}`;
+      const paymentDisplay = c.next_payment_date || `Dia ${c.payment_day}`;
+      const daysUntil = c.next_payment_date ? getDaysUntilDate(c.next_payment_date) : null;
+      const isDueWarning = daysUntil !== null && daysUntil <= 3;
+      const hasDebt = totalDebt > 0;
 
       return `
         <div class="credit-card-visual">
@@ -2476,7 +2514,66 @@
             </div>
           </div>
 
-          <div class="credit-card-footer">
+          <div class="credit-card-dates" style="display: flex; justify-content: space-between; font-size: 11px; margin: 8px 0; padding: 6px 10px; background-color: var(--color-fondo); border: 1px solid var(--color-borde); border-radius: var(--radio-borde);">
+            <span class="credit-card-date-item">
+              <i class="fa-solid fa-calendar" aria-hidden="true" style="margin-right: 4px; color: var(--color-texto-secundario);"></i>
+              <span>Proximo corte: <strong>${escapeHtml(cutoffDisplay)}</strong></span>
+            </span>
+            <span class="credit-card-date-item ${isDueWarning ? 'due-warning' : ''}" style="${isDueWarning ? 'color: #D97706 !important;' : ''}">
+              <i class="fa-solid fa-calendar-check" aria-hidden="true" style="margin-right: 4px; ${isDueWarning ? 'color: #D97706 !important;' : 'color: var(--color-texto-secundario);'}"></i>
+              <span>Limite de pago: <strong>${escapeHtml(paymentDisplay)}</strong>${isDueWarning ? (daysUntil <= 0 ? ' (Vence hoy)' : ` (${daysUntil} dias)`) : ''}</span>
+            </span>
+          </div>
+
+          <div class="credit-card-period-box">
+            <div class="credit-card-period-header">
+              <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
+              <span>Pago del Periodo</span>
+            </div>
+            <div class="credit-card-period-grid">
+              <div class="credit-card-period-item">
+                <span class="credit-card-period-label">Pago Minimo</span>
+                <span class="credit-card-period-val">${formatCurrency(minPayment)}</span>
+              </div>
+              <div class="credit-card-period-item">
+                <span class="credit-card-period-label">Pago Total (0% interes)</span>
+                <span class="credit-card-period-val">${formatCurrency(fullPayment)}</span>
+              </div>
+              <div class="credit-card-period-item">
+                <span class="credit-card-period-label">Deuda Total</span>
+                <span class="credit-card-period-val amount-gasto">${formatCurrency(totalDebt)}</span>
+              </div>
+            </div>
+          </div>
+
+          ${hasDebt ? `
+            <div class="credit-card-pay-actions" style="margin-top: 8px; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px;">
+              <button type="button" class="btn btn-primary btn-sm" data-action="pay-min" data-id="${c.id}" data-amount="${minPayment}">
+                <i class="fa-solid fa-money-bill-wave" aria-hidden="true"></i>
+                <span>Pagar Minimo (${formatCurrency(minPayment)})</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" data-action="pay-total" data-id="${c.id}" data-amount="${fullPayment}">
+                <i class="fa-solid fa-wallet" aria-hidden="true"></i>
+                <span>Pagar Total (${formatCurrency(fullPayment)})</span>
+              </button>
+              <button type="button" class="btn btn-link btn-sm" data-action="pay-custom" data-id="${c.id}" data-amount="${totalDebt}" style="font-size: 11px; padding: 4px 6px;">
+                <span>Otro monto...</span>
+              </button>
+            </div>
+          ` : `
+            <div class="credit-card-pay-actions" style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between;">
+              <span class="badge badge-success" style="font-size: 11px;">
+                <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+                <span>Al dia (Sin deuda pendiente)</span>
+              </span>
+              <button type="button" class="btn btn-secondary btn-sm" data-action="pay-custom" data-id="${c.id}" data-amount="0" style="font-size: 11px;">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                <span>Abono voluntario</span>
+              </button>
+            </div>
+          `}
+
+          <div class="credit-card-footer" style="margin-top: 8px;">
             <span><i class="fa-solid fa-calendar-days" aria-hidden="true" style="margin-right: 4px;"></i> Corte: <strong>Dia ${c.cutoff_day}</strong> | Pago: <strong>Dia ${c.payment_day}</strong></span>
             <span><i class="fa-solid fa-percent" aria-hidden="true" style="margin-right: 4px;"></i> <strong>${Number(c.default_interest_rate || 0).toFixed(2)}% M.V.</strong></span>
           </div>
@@ -2508,6 +2605,10 @@
       const limitCents = Math.round(Number(c.credit_limit || 0) * 100);
       const availCents = Math.round(Number(c.available_limit || 0) * 100);
       const usedCents = Math.max(0, limitCents - availCents);
+      const daysUntil = c.next_payment_date ? getDaysUntilDate(c.next_payment_date) : null;
+      const isDueWarning = daysUntil !== null && daysUntil <= 3;
+      const totalDebt = typeof c.total_debt === 'number' ? c.total_debt : (usedCents / 100);
+      const hasDebt = totalDebt > 0;
 
       return `
         <tr>
@@ -2520,9 +2621,9 @@
           <td class="text-right tabular-nums amount-gasto">${formatCentavos(usedCents, 'TOTAL_MONEDA')}</td>
           <td class="text-right tabular-nums amount-ingreso">${formatCentavos(availCents, 'TOTAL_MONEDA')}</td>
           <td class="text-center">
-            <span class="badge badge-neutral">
-              <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
-              <span>Corte: ${c.cutoff_day} / Pago: ${c.payment_day}</span>
+            <span class="badge ${isDueWarning ? 'badge-warning' : 'badge-neutral'}" style="${isDueWarning ? 'background-color: rgba(217, 119, 6, 0.15); color: #D97706; border-color: #D97706;' : ''}">
+              <i class="fa-solid ${isDueWarning ? 'fa-calendar-check' : 'fa-calendar-days'}" aria-hidden="true"></i>
+              <span>${c.next_payment_date ? `Pago: ${c.next_payment_date}` : `Corte: ${c.cutoff_day} / Pago: ${c.payment_day}`}</span>
             </span>
           </td>
           <td class="text-right tabular-nums">
@@ -2533,6 +2634,11 @@
           </td>
           <td class="text-center">
             <div style="display: inline-flex; gap: 4px;">
+              ${hasDebt ? `
+                <button type="button" class="btn btn-primary btn-sm btn-icon-only" data-action="pay-custom" data-id="${c.id}" data-amount="${totalDebt}" title="Registrar pago de tarjeta" aria-label="Registrar pago">
+                  <i class="fa-solid fa-money-bill-wave" aria-hidden="true"></i>
+                </button>
+              ` : ''}
               <button type="button" class="btn btn-secondary btn-sm btn-icon-only" data-action="edit-card" data-id="${c.id}" title="Editar tarjeta" aria-label="Editar tarjeta">
                 <i class="fa-solid fa-pen" aria-hidden="true"></i>
               </button>
@@ -2683,6 +2789,172 @@
         }
       }
     );
+  }
+
+  // =========================================================
+  // GESTION DE PAGOS DE TARJETA DE CREDITO (API_CONTRACT.md 11)
+  // =========================================================
+
+  function openPagoTarjetaModal(cardId, paymentType = 'MINIMO', defaultAmount = null) {
+    const card = (AppState.creditCards || []).find((c) => c.id === cardId);
+    if (!card) return;
+
+    const modal = $('modal-pago-tarjeta');
+    const form = $('form-pago-tarjeta');
+    if (!modal || !form) return;
+
+    clearFormErrors(form);
+    hideBanner('modal-pago-tarjeta-alert');
+
+    const totalDebt = typeof card.total_debt === 'number'
+      ? card.total_debt
+      : Math.max(0, (Number(card.credit_limit || 0) - Number(card.available_limit || 0)));
+    const minPayment = typeof card.minimum_payment === 'number' ? card.minimum_payment : 0;
+    const fullPayment = typeof card.full_payment === 'number' ? card.full_payment : totalDebt;
+
+    if ($('pago-tarjeta-id')) $('pago-tarjeta-id').value = String(card.id);
+    if ($('pago-tarjeta-type')) $('pago-tarjeta-type').value = paymentType || 'MINIMO';
+    if ($('pago-tarjeta-name')) $('pago-tarjeta-name').textContent = card.name || `Tarjeta #${card.id}`;
+    if ($('pago-tarjeta-bank')) $('pago-tarjeta-bank').textContent = card.bank || '';
+    if ($('pago-tarjeta-total-debt')) $('pago-tarjeta-total-debt').textContent = formatCurrency(totalDebt);
+
+    const cutoffStr = card.next_cutoff_date ? `Corte: ${card.next_cutoff_date}` : `Corte dia ${card.cutoff_day}`;
+    const paymentStr = card.next_payment_date ? `Pago: ${card.next_payment_date}` : `Pago dia ${card.payment_day}`;
+    if ($('pago-tarjeta-period-info')) $('pago-tarjeta-period-info').textContent = `${cutoffStr} | ${paymentStr}`;
+
+    let amountToSet = 0;
+    if (defaultAmount !== null && !isNaN(Number(defaultAmount)) && Number(defaultAmount) > 0) {
+      amountToSet = Number(defaultAmount);
+    } else if (paymentType === 'MINIMO') {
+      amountToSet = minPayment > 0 ? minPayment : (totalDebt > 0 ? totalDebt : 0);
+    } else if (paymentType === 'TOTAL') {
+      amountToSet = fullPayment > 0 ? fullPayment : totalDebt;
+    } else {
+      amountToSet = totalDebt > 0 ? totalDebt : 0;
+    }
+
+    if ($('pago-tarjeta-amount')) {
+      $('pago-tarjeta-amount').value = amountToSet > 0 ? amountToSet.toFixed(2) : '';
+    }
+    if ($('pago-tarjeta-method')) $('pago-tarjeta-method').value = 'DEBITO';
+    if ($('pago-tarjeta-date')) $('pago-tarjeta-date').value = getTodayIso();
+    if ($('pago-tarjeta-notes')) $('pago-tarjeta-notes').value = '';
+    if ($('pago-tarjeta-create-tx')) $('pago-tarjeta-create-tx').checked = true;
+
+    modal.classList.add('open');
+    setTimeout(() => {
+      if ($('pago-tarjeta-amount')) $('pago-tarjeta-amount').focus();
+    }, 50);
+  }
+
+  function closePagoTarjetaModal() {
+    const modal = $('modal-pago-tarjeta');
+    if (!modal) return;
+    modal.classList.remove('open');
+    const form = $('form-pago-tarjeta');
+    if (form) clearFormErrors(form);
+    hideBanner('modal-pago-tarjeta-alert');
+  }
+
+  async function submitPagoTarjetaForm(ev) {
+    ev.preventDefault();
+    const form = $('form-pago-tarjeta');
+    clearFormErrors(form);
+    hideBanner('modal-pago-tarjeta-alert');
+
+    const cardId = parseInt($('pago-tarjeta-id').value, 10);
+    const initialPaymentType = $('pago-tarjeta-type').value || 'OTRO';
+    const amountVal = parseFloat($('pago-tarjeta-amount').value);
+    const paymentMethod = $('pago-tarjeta-method').value;
+    const paymentDate = $('pago-tarjeta-date').value.trim();
+    const notes = $('pago-tarjeta-notes').value.trim();
+    const createTx = $('pago-tarjeta-create-tx').checked;
+
+    let hasError = false;
+
+    if (!cardId || isNaN(cardId)) {
+      showBanner('modal-pago-tarjeta-alert', 'danger', 'Tarjeta no valida.');
+      return;
+    }
+
+    if (isNaN(amountVal) || amountVal <= 0) {
+      applyFieldError(form, 'amount', 'El monto a abonar debe ser un numero positivo mayor a 0.');
+      hasError = true;
+    }
+
+    const validMethods = ['DEBITO', 'TRANSFERENCIA', 'EFECTIVO', 'OTRO'];
+    if (!validMethods.includes(paymentMethod)) {
+      applyFieldError(form, 'payment_method', 'Seleccione un metodo de pago valido.');
+      hasError = true;
+    }
+
+    if (!paymentDate || !/^\d{4}-\d{2}-\d{2}$/.test(paymentDate)) {
+      applyFieldError(form, 'date', 'Ingrese una fecha valida en formato YYYY-MM-DD.');
+      hasError = true;
+    }
+
+    if (notes) {
+      if (EMOJI_REGEX.test(notes)) {
+        applyFieldError(form, 'notes', 'No se permiten emojis en las notas.');
+        hasError = true;
+      }
+      if (notes.length > 500) {
+        applyFieldError(form, 'notes', 'Las notas no pueden superar 500 caracteres.');
+        hasError = true;
+      }
+    }
+
+    if (hasError) return;
+
+    const btn = $('btn-modal-pago-tarjeta-submit');
+    setButtonLoading(btn, true);
+
+    try {
+      // Determinar clasificacion contable de tipo de pago
+      const card = (AppState.creditCards || []).find((c) => c.id === cardId);
+      let resolvedPaymentType = initialPaymentType;
+      if (card) {
+        const minP = Number(card.minimum_payment || 0);
+        const fullP = Number(card.full_payment || (Number(card.credit_limit || 0) - Number(card.available_limit || 0)));
+        if (minP > 0 && Math.abs(amountVal - minP) < 0.01) {
+          resolvedPaymentType = 'MINIMO';
+        } else if (fullP > 0 && Math.abs(amountVal - fullP) < 0.01) {
+          resolvedPaymentType = 'TOTAL';
+        } else {
+          resolvedPaymentType = 'OTRO';
+        }
+      }
+
+      const payload = {
+        amount: Number(amountVal.toFixed(2)),
+        payment_type: resolvedPaymentType,
+        payment_method: paymentMethod,
+        date: paymentDate,
+        notes: notes || undefined,
+        create_transaction: createTx
+      };
+
+      if (global.api && global.api.creditCards && typeof global.api.creditCards.pay === 'function') {
+        await global.api.creditCards.pay(cardId, payload);
+      } else {
+        await global.ApiClient.payCreditCard(cardId, payload);
+      }
+
+      closePagoTarjetaModal();
+      showBanner('tarjeta-form-alert', 'success', 'Pago registrado correctamente.');
+      await loadCreditCardsView();
+
+      if (createTx && typeof loadTransacciones === 'function') {
+        loadTransacciones(AppState.transaccionesMeta.pagina || 1).catch(() => {});
+      }
+      if (typeof loadDashboard === 'function') {
+        loadDashboard().catch(() => {});
+      }
+    } catch (err) {
+      handleApiError(err, { formEl: form, alertContainerId: 'modal-pago-tarjeta-alert' });
+    } finally {
+      setButtonLoading(btn, false);
+    }
   }
 
   // =========================================================
@@ -3408,6 +3680,12 @@
           startEditCreditCard(card);
         } else if (action === 'delete-card') {
           handleDeleteCreditCard(id);
+        } else if (action === 'pay-min') {
+          openPagoTarjetaModal(id, 'MINIMO', parseFloat(btn.dataset.amount));
+        } else if (action === 'pay-total') {
+          openPagoTarjetaModal(id, 'TOTAL', parseFloat(btn.dataset.amount));
+        } else if (action === 'pay-custom') {
+          openPagoTarjetaModal(id, 'OTRO', parseFloat(btn.dataset.amount));
         }
       });
     }
@@ -3425,6 +3703,30 @@
           startEditCreditCard(card);
         } else if (action === 'delete-card') {
           handleDeleteCreditCard(id);
+        } else if (action === 'pay-min') {
+          openPagoTarjetaModal(id, 'MINIMO');
+        } else if (action === 'pay-total') {
+          openPagoTarjetaModal(id, 'TOTAL');
+        } else if (action === 'pay-custom') {
+          openPagoTarjetaModal(id, 'OTRO', parseFloat(btn.dataset.amount));
+        }
+      });
+    }
+
+    // Eventos del Modal de Pago de Tarjeta de Credito
+    if ($('form-pago-tarjeta')) {
+      $('form-pago-tarjeta').addEventListener('submit', submitPagoTarjetaForm);
+    }
+    if ($('btn-modal-pago-tarjeta-close')) {
+      $('btn-modal-pago-tarjeta-close').addEventListener('click', closePagoTarjetaModal);
+    }
+    if ($('btn-modal-pago-tarjeta-cancel')) {
+      $('btn-modal-pago-tarjeta-cancel').addEventListener('click', closePagoTarjetaModal);
+    }
+    if ($('modal-pago-tarjeta')) {
+      $('modal-pago-tarjeta').addEventListener('click', (e) => {
+        if (e.target === $('modal-pago-tarjeta')) {
+          closePagoTarjetaModal();
         }
       });
     }

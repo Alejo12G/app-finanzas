@@ -320,6 +320,29 @@
     };
   }
 
+  function formatCurrency(amount, moneda = null) {
+    const n = Number(amount);
+    if (!Number.isFinite(n)) return formatCentavos(0, 'TOTAL_MONEDA', moneda);
+    return formatCentavos(Math.round(n * 100), 'TOTAL_MONEDA', moneda);
+  }
+
+  function getDaysUntilDate(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') return null;
+    const parts = dateStr.trim().split('-');
+    if (parts.length !== 3) return null;
+    const y = Number(parts[0]);
+    const m = Number(parts[1]) - 1;
+    const d = Number(parts[2]);
+    if (!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d)) {
+      return null;
+    }
+    const target = new Date(y, m, d);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffMs = target.getTime() - today.getTime();
+    return Math.round(diffMs / (1000 * 60 * 60 * 24));
+  }
+
   global.AppUtils = {
     EMOJI_REGEX,
     MESES_NOMBRES,
@@ -343,6 +366,8 @@
     centavosToDecimalInput,
     formatNumberWithCommas,
     formatCentavos,
+    formatCurrency,
+    getDaysUntilDate,
     getTodayIso,
     getCurrentPeriod,
     formatMonthYear,

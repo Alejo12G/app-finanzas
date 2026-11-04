@@ -1295,3 +1295,89 @@ code {
   border: 1px solid var(--color-peligro);
 }
 
+/* Fechas Reales de Facturacion y Bloque de Pago del Periodo (API_CONTRACT.md 11) */
+.credit-card-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-texto-secundario);
+  background-color: var(--color-fondo);
+  padding: 8px 12px;
+  border-radius: var(--radio-borde);
+  border: 1px solid var(--color-borde);
+}
+
+.credit-card-date-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.credit-card-date-item.due-warning {
+  color: #D97706 !important;
+  font-weight: 700;
+}
+
+.credit-card-date-item.due-warning i {
+  color: #D97706 !important;
+}
+
+.credit-card-period-box {
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.credit-card-period-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-texto-secundario);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px dashed var(--color-borde);
+  padding-bottom: 4px;
+}
+
+.credit-card-period-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+
+.credit-card-period-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.credit-card-period-label {
+  font-size: 10px;
+  color: var(--color-texto-secundario);
+  text-transform: uppercase;
+}
+
+.credit-card-period-val {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-texto);
+}
+
+.credit-card-pay-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+

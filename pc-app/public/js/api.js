@@ -220,6 +220,12 @@
     simulateCreditCard(body) {
       return request('POST', '/credit-cards/simulate', { body });
     },
+    payCreditCard(id, body) {
+      return request('POST', `/credit-cards/${encodeURIComponent(id)}/payments`, { body });
+    },
+    getCreditCardPayments(id) {
+      return request('GET', `/credit-cards/${encodeURIComponent(id)}/payments`);
+    },
 
     // 8 Modulo IA (Gemini)
     analyzeAi(body) {
@@ -227,5 +233,18 @@
     }
   };
 
+  // Namespace dedicado creditCards requerido por la interfaz y pruebas
+  ApiClient.creditCards = {
+    getAll: () => ApiClient.getCreditCards(),
+    getById: (id) => ApiClient.getCreditCard(id),
+    create: (body) => ApiClient.createCreditCard(body),
+    update: (id, body) => ApiClient.updateCreditCard(id, body),
+    delete: (id) => ApiClient.deleteCreditCard(id),
+    simulate: (body) => ApiClient.simulateCreditCard(body),
+    pay: (id, data) => ApiClient.payCreditCard(id, data),
+    getPayments: (id) => ApiClient.getCreditCardPayments(id)
+  };
+
   global.ApiClient = ApiClient;
+  global.api = ApiClient;
 })(typeof window !== 'undefined' ? window : globalThis);
