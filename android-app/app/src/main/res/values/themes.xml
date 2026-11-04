@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme.Light" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:colorPrimary">@color/colorPrimaryAccent</item>
+        <item name="android:colorPrimaryDark">@color/color_barra_superior</item>
+        <item name="android:colorAccent">@color/colorPrimaryAccent</item>
+        <item name="android:windowBackground">@color/colorBackgroundPrimary</item>
+        <item name="android:colorBackground">@color/colorSurfaceCard</item>
+        <item name="android:popupBackground">@color/colorSurfaceCard</item>
+        <item name="android:statusBarColor">@color/color_barra_superior</item>
+        <item name="android:navigationBarColor">@color/colorSurfaceCard</item>
+        <item name="android:textColorPrimary">@color/colorTextPrimary</item>
+        <item name="android:textColorSecondary">@color/colorTextSecondary</item>
+        <item name="android:textColorHint">@color/color_texto_deshabilitado</item>
+        <item name="android:alertDialogTheme">@android:style/Theme.Material.Light.Dialog.Alert</item>
+        <item name="android:dialogTheme">@android:style/Theme.Material.Light.Dialog</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <style name="AppTheme.Dark" parent="android:Theme.Material.NoActionBar">
+        <item name="android:colorPrimary">@color/colorPrimaryAccent</item>
+        <item name="android:colorPrimaryDark">@color/color_barra_superior</item>
+        <item name="android:colorAccent">@color/colorPrimaryAccent</item>
+        <item name="android:windowBackground">@color/colorBackgroundPrimary</item>
+        <item name="android:colorBackground">@color/colorSurfaceCard</item>
+        <item name="android:popupBackground">@color/colorSurfaceCard</item>
+        <item name="android:statusBarColor">@color/color_barra_superior</item>
+        <item name="android:navigationBarColor">@color/colorSurfaceCard</item>
+        <item name="android:textColorPrimary">@color/colorTextPrimary</item>
+        <item name="android:textColorSecondary">@color/colorTextSecondary</item>
+        <item name="android:textColorHint">@color/color_texto_deshabilitado</item>
+        <item name="android:alertDialogTheme">@android:style/Theme.Material.Dialog.Alert</item>
+        <item name="android:dialogTheme">@android:style/Theme.Material.Dialog</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+</resources>

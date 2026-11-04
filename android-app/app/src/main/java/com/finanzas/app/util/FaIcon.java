@@ -66,6 +66,8 @@ public final class FaIcon {
         GLYPH_MAP.put("fa-wand-magic-sparkles", "\ue2ca");
         GLYPH_MAP.put("fa-paper-plane", "\uf1d8");
         GLYPH_MAP.put("fa-copy", "\uf0c5");
+        GLYPH_MAP.put("fa-moon", "\uf186");
+        GLYPH_MAP.put("fa-sun", "\uf185");
 
         // 5.3 Indicadores y estados
         GLYPH_MAP.put("fa-arrow-trend-up", "\ue098");

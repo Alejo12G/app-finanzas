@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Paleta Oficial Modo Oscuro Clasico (exactamente igual a la app de PC) -->
+    <color name="colorBackgroundPrimary">#12161F</color>
+    <color name="colorSurfaceCard">#1A202C</color>
+    <color name="colorTableRowAlt">#222938</color>
+    <color name="colorBorderDivider">#2D3748</color>
+    <color name="colorTextPrimary">#E2E8F0</color>
+    <color name="colorTextSecondary">#94A3B8</color>
+    <color name="colorPrimaryAccent">#2B6CB0</color>
+    <color name="colorIncomeGreen">#38A169</color>
+    <color name="colorExpenseRed">#E53E3E</color>
+
+    <!-- Referencias semanticas del sistema de diseno -->
+    <color name="color_primario">@color/colorPrimaryAccent</color>
+    <color name="color_secundario">@color/colorTextSecondary</color>
+    <color name="color_exito">@color/colorIncomeGreen</color>
+    <color name="color_peligro">@color/colorExpenseRed</color>
+    <color name="color_fondo">@color/colorBackgroundPrimary</color>
+    <color name="color_superficie">@color/colorSurfaceCard</color>
+    <color name="color_tabla_fila_alt">@color/colorTableRowAlt</color>
+    <color name="color_borde">@color/colorBorderDivider</color>
+    <color name="color_texto">@color/colorTextPrimary</color>
+    <color name="color_texto_secundario">@color/colorTextSecondary</color>
+
+    <!-- Colores de soporte y barra superior (Modo Oscuro) -->
+    <color name="color_barra_superior">@color/colorSurfaceCard</color>
+    <color name="color_texto_barra">@color/colorTextPrimary</color>
+    <color name="color_subtitulo_barra">@color/colorTextSecondary</color>
+    <color name="color_primario_hover">#3182CE</color>
+    <color name="color_primario_suave">@color/colorTableRowAlt</color>
+    <color name="color_texto_deshabilitado">#64748B</color>
+    <color name="color_texto_invertido">#FFFFFF</color>
+    <color name="color_advertencia">#D69E2E</color>
+    <color name="color_exito_suave">#1C3128</color>
+    <color name="color_peligro_suave">#321C22</color>
+    <color name="color_advertencia_suave">#332818</color>
+</resources>

@@ -469,7 +469,7 @@ public class DashboardView extends ScrollView {
                 row.setGravity(Gravity.CENTER_VERTICAL);
                 int pad8 = UiHelper.dp(getContext(), 8);
                 row.setPadding(pad8, pad8, pad8, pad8);
-                row.setBackgroundColor((i % 2 == 0) ? UiHelper.COLOR_SUPERFICIE : UiHelper.COLOR_FONDO);
+                row.setBackgroundColor((i % 2 == 0) ? UiHelper.COLOR_SUPERFICIE : UiHelper.COLOR_TABLA_FILA_ALT);
 
                 TextView iconTv = new TextView(getContext());
                 String ic = (t.categoria != null && t.categoria.icono != null) ? t.categoria.icono : "fa-solid fa-tag";

@@ -22,7 +22,7 @@
         android:layout_marginTop="@dimen/space_16"
         android:gravity="center"
         android:text="@string/sin_registros"
-        android:textColor="@color/color_texto_secundario"
+        android:textColor="@color/colorTextSecondary"
         android:textSize="@dimen/text_base" />
 
     <Button

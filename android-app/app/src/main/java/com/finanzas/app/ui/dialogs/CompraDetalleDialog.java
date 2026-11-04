@@ -135,7 +135,7 @@ public class CompraDetalleDialog {
                 LinearLayout row = new LinearLayout(context);
                 row.setOrientation(LinearLayout.HORIZONTAL);
                 row.setGravity(Gravity.CENTER_VERTICAL);
-                row.setBackgroundColor((i % 2 == 0) ? UiHelper.COLOR_SUPERFICIE : UiHelper.COLOR_FONDO);
+                row.setBackgroundColor((i % 2 == 0) ? UiHelper.COLOR_SUPERFICIE : UiHelper.COLOR_TABLA_FILA_ALT);
                 row.setPadding(pad8, pad8, pad8, pad8);
 
                 TextView tvName = new TextView(context);

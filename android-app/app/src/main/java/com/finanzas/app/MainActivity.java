@@ -1,6 +1,7 @@
 package com.finanzas.app;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.TypedValue;
@@ -31,6 +32,7 @@ import com.finanzas.app.ui.dialogs.GastoRapidoIaDialog;
 import com.finanzas.app.ui.dialogs.TransaccionFormDialog;
 import com.finanzas.app.util.CurrencyUtils;
 import com.finanzas.app.util.FaIcon;
+import com.finanzas.app.util.ThemeManager;
 import com.finanzas.app.util.UiHelper;
 
 import java.util.ArrayList;
@@ -38,7 +40,8 @@ import java.util.List;
 
 /**
  * Actividad principal de la aplicacion Android nativa en Java puro.
- * Implementa las 7 secciones obligatorias de UI_DESIGN.md Seccion 5.1 y Seccion 6.
+ * Implementa las 7 secciones obligatorias de UI_DESIGN.md Seccion 5.1 y Seccion 6,
+ * e inyecta el sistema de Temas (Modo Oscuro Clasico por defecto y Modo Claro).
  */
 public class MainActivity extends Activity {
 
@@ -50,8 +53,12 @@ public class MainActivity extends Activity {
     private static final int TAB_ASESOR_IA = 5;
     private static final int TAB_CONFIGURACION = 6;
 
+    private static final String STATE_ACTIVE_TAB = "state_active_tab";
+    private static int lastActiveTab = TAB_DASHBOARD;
+
     private TextView tvScreenTitle;
     private TextView tvSubtitleCurrency;
+    private TextView btnThemeToggleTop;
     private ProgressBar progressBarGlobal;
     private LinearLayout bannerGlobalStatus;
     private TextView tvBannerGlobalIcon;
@@ -83,15 +90,29 @@ public class MainActivity extends Activity {
     };
 
     @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(ThemeManager.wrapContext(newBase));
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Inyeccion obligatoria del Tema (Modo Oscuro Clasico por defecto) antes de setContentView
+        ThemeManager.applyTheme(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if (savedInstanceState != null) {
+            activeTab = savedInstanceState.getInt(STATE_ACTIVE_TAB, lastActiveTab);
+        } else {
+            activeTab = lastActiveTab;
+        }
 
         TextView tvAppLogoIcon = findViewById(R.id.tvAppLogoIcon);
         FaIcon.apply(tvAppLogoIcon, "fa-solid fa-building-columns");
 
         tvScreenTitle = findViewById(R.id.tvScreenTitle);
         tvSubtitleCurrency = findViewById(R.id.tvSubtitleCurrency);
+        btnThemeToggleTop = findViewById(R.id.btnThemeToggleTop);
         progressBarGlobal = findViewById(R.id.progressBarGlobal);
         bannerGlobalStatus = findViewById(R.id.bannerGlobalStatus);
         tvBannerGlobalIcon = findViewById(R.id.tvBannerGlobalIcon);
@@ -99,6 +120,15 @@ public class MainActivity extends Activity {
         btnBannerRetry = findViewById(R.id.btnBannerRetry);
         contentContainer = findViewById(R.id.contentContainer);
         bottomNavContainer = findViewById(R.id.bottomNavContainer);
+
+        updateToolbarThemeButton();
+        btnThemeToggleTop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                lastActiveTab = activeTab;
+                ThemeManager.toggleTheme(MainActivity.this);
+            }
+        });
 
         TextView btnQuickAiTop = findViewById(R.id.btnQuickAiTop);
         FaIcon.apply(btnQuickAiTop, "fa-solid fa-wand-magic-sparkles");
@@ -138,7 +168,23 @@ public class MainActivity extends Activity {
         buildBottomNavigation();
         cargarCategoriasSemillaLocales();
         checkHealthAndInit();
-        selectTab(TAB_DASHBOARD);
+        selectTab(activeTab);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(STATE_ACTIVE_TAB, activeTab);
+        lastActiveTab = activeTab;
+    }
+
+    public void updateToolbarThemeButton() {
+        if (btnThemeToggleTop == null) {
+            return;
+        }
+        boolean isDark = ThemeManager.isDarkMode(this);
+        FaIcon.apply(btnThemeToggleTop, isDark ? "fa-solid fa-sun" : "fa-solid fa-moon");
+        btnThemeToggleTop.setContentDescription(isDark ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro");
     }
 
     private void initViews() {
@@ -195,7 +241,11 @@ public class MainActivity extends Activity {
     }
 
     public void selectTab(int tabIndex) {
+        if (tabIndex < 0 || tabIndex >= NAV_ITEMS.length) {
+            tabIndex = TAB_DASHBOARD;
+        }
         activeTab = tabIndex;
+        lastActiveTab = tabIndex;
         tvScreenTitle.setText(NAV_ITEMS[tabIndex][0]);
 
         for (int i = 0; i < navTabViews.size(); i++) {

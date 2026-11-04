@@ -62,6 +62,8 @@ public class CategoriaBarChartView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        valuePaint.setColor(UiHelper.COLOR_TEXTO_SECUNDARIO);
+        trackPaint.setColor(UiHelper.COLOR_BORDE);
         if (items == null || items.isEmpty()) {
             labelPaint.setColor(UiHelper.COLOR_TEXTO_SECUNDARIO);
             canvas.drawText("Sin gastos por categoria en este periodo.", UiHelper.dp(getContext(), 4), UiHelper.dp(getContext(), 28), labelPaint);

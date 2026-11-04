@@ -56,6 +56,9 @@ public class EvolucionBarChartView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        gridPaint.setColor(UiHelper.COLOR_BORDE);
+        axisTextPaint.setColor(UiHelper.COLOR_TEXTO_SECUNDARIO);
+        legendPaint.setColor(UiHelper.COLOR_TEXTO_SECUNDARIO);
         int w = getWidth();
         int h = getHeight();
         int dp8 = UiHelper.dp(getContext(), 8);

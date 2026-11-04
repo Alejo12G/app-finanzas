@@ -3,15 +3,15 @@
     android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/color_fondo"
+    android:background="@color/colorBackgroundPrimary"
     android:orientation="vertical">
 
-    <!-- Barra superior azul marino (#1B2A4A) -->
+    <!-- Barra superior con referencias semanticas de color -->
     <LinearLayout
         android:id="@+id/topAppBar"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:background="@color/color_primario"
+        android:background="@color/color_barra_superior"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingLeft="@dimen/space_16"
@@ -32,7 +32,7 @@
             android:layout_height="wrap_content"
             android:layout_marginRight="@dimen/space_8"
             android:contentDescription="@null"
-            android:textColor="@color/color_texto_invertido"
+            android:textColor="@color/color_texto_barra"
             android:textSize="18sp"
             android:visibility="gone" />
 
@@ -47,7 +47,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/nav_dashboard"
-                android:textColor="@color/color_texto_invertido"
+                android:textColor="@color/color_texto_barra"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -56,9 +56,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Moneda: COP"
-                android:textColor="@color/color_primario_suave"
+                android:textColor="@color/color_subtitulo_barra"
                 android:textSize="11sp" />
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/btnThemeToggleTop"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginRight="4dp"
+            android:background="@drawable/bg_button_primary"
+            android:contentDescription="@string/cambiar_tema"
+            android:gravity="center"
+            android:textColor="@color/color_texto_invertido"
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/btnQuickAiTop"
@@ -82,6 +93,13 @@
             android:textSize="16sp" />
     </LinearLayout>
 
+    <!-- Separador inferior de la barra superior -->
+    <View
+        android:id="@+id/topBarDivider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/colorBorderDivider" />
+
     <!-- Banner de bloqueo 401 o estado global -->
     <LinearLayout
         android:id="@+id/bannerGlobalStatus"
@@ -98,7 +116,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginRight="@dimen/space_8"
-            android:textColor="@color/color_peligro"
+            android:textColor="@color/colorExpenseRed"
             android:textSize="16sp" />
 
         <TextView
@@ -106,7 +124,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textColor="@color/color_peligro"
+            android:textColor="@color/colorExpenseRed"
             android:textSize="13sp"
             android:textStyle="bold" />
 
@@ -119,18 +137,18 @@
             android:paddingRight="12dp"
             android:text="@string/btn_reintentar"
             android:textAllCaps="false"
-            android:textColor="@color/color_secundario"
+            android:textColor="@color/colorTextSecondary"
             android:textSize="12sp" />
     </LinearLayout>
 
-    <!-- Indicador de progreso nativo (#1B2A4A) -->
+    <!-- Indicador de progreso nativo -->
     <ProgressBar
         android:id="@+id/progressBarGlobal"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="4dp"
         android:indeterminate="true"
-        android:indeterminateTint="@color/color_primario"
+        android:indeterminateTint="@color/colorPrimaryAccent"
         android:visibility="gone" />
 
     <!-- Contenedor principal de pantallas -->
@@ -142,15 +160,17 @@
 
     <!-- Separador -->
     <View
+        android:id="@+id/bottomBarDivider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="@color/color_borde" />
+        android:background="@color/colorBorderDivider" />
 
     <!-- Barra de navegacion inferior deslizable horizontalmente para las 7 secciones de UI_DESIGN.md 5.1 -->
     <HorizontalScrollView
+        android:id="@+id/bottomNavScroll"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:background="@color/color_superficie"
+        android:background="@color/colorSurfaceCard"
         android:fillViewport="true"
         android:scrollbars="none">
 

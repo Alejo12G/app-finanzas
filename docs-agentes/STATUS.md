@@ -9,7 +9,7 @@
 |---|---|---|---|---|---|---|
 | Backend | Agente Backend | `/backend-vps` | `feature/backend-api` | COMPLETADO | 2026-11-03 | Servidor HTTP nativo Node.js (`0.0.0.0:54892`), SQLite nativo (`node:sqlite` en modo WAL con 31 categorias semilla), validacion constante `X-App-Private-Token`, integracion Gemini IA (analisis mensual y parseo de compras en texto libre) y `deploy-vps.sh` con UFW + PM2 |
 | PC | Agente PC | `/pc-app` | `feature/pc-app` | COMPLETADO | 2026-11-03 | Cliente de escritorio Node.js ultraligero (1.48 MB totales, 0 MB en `node_modules`) con ventana nativa `--app` (Edge/Chrome), Chart.js, FontAwesome 6.5.2 local + CDN y las 7 pantallas completas conectadas a `51.161.47.99:54892` |
-| Android | Agente Android | `/android-app` | `feature/android-app` | COMPLETADO | 2026-11-03 | Cliente Android nativo en Java puro (APK de 481 KB, cero dependencias pesadas), `network_security_config` para `51.161.47.99`, fuentes FontAwesome 6.5.2 en `assets/fonts`, las 7 vistas completas, creacion rapida por texto con IA, `compilar-local.bat`/`.sh` y `.github/workflows/build-apk.yml` |
+| Android | Agente Android | `/android-app` | `feature/sistema-temas` | COMPLETADO | 2026-11-03 | Cliente Android nativo en Java puro (cero dependencias pesadas), sistema completo de Temas (Modo Oscuro Clasico por defecto + Modo Claro) con `ThemeManager`, `SharedPreferences` y `values-night/colors.xml`, selector FontAwesome en Toolbar y Configuracion, `network_security_config` para `51.161.47.99`, fuentes FontAwesome 6.5.2 en `assets/fonts`, las 7 vistas completas, creacion rapida por texto con IA, `compilar-local.bat`/`.sh` y `.github/workflows/build-apk.yml` |
 
 ### Estados permitidos
 
@@ -58,6 +58,7 @@
 |---|---|
 | Estructura, `network_security_config` y cliente HTTP | COMPLETADO |
 | Tema, paleta y fuentes FontAwesome en `assets` | COMPLETADO |
+| Sistema de Temas (Modo Oscuro Clasico por defecto y Modo Claro) con `ThemeManager` y `SharedPreferences` | COMPLETADO |
 | Dashboard | COMPLETADO |
 | Transacciones | COMPLETADO |
 | Compras con desglose | COMPLETADO |

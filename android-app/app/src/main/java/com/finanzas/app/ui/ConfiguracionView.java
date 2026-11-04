@@ -20,10 +20,12 @@ import com.finanzas.app.model.HealthInfo;
 import com.finanzas.app.model.PaginacionMeta;
 import com.finanzas.app.util.CurrencyUtils;
 import com.finanzas.app.util.FaIcon;
+import com.finanzas.app.util.ThemeManager;
 import com.finanzas.app.util.UiHelper;
 
 /**
- * Vista de Configuracion y Estado de Conexion con el VPS (UI_DESIGN.md Seccion 6 y API_CONTRACT.md 7.1).
+ * Vista de Configuracion, Selector de Tema (Modo Oscuro Clasico por defecto / Modo Claro)
+ * y Estado de Conexion con el VPS (UI_DESIGN.md Seccion 6 y API_CONTRACT.md 7.1).
  */
 public class ConfiguracionView extends ScrollView {
 
@@ -41,14 +43,126 @@ public class ConfiguracionView extends ScrollView {
         initUi(context);
     }
 
-    private void initUi(Context context) {
+    private void initUi(final Context context) {
         LinearLayout root = new LinearLayout(context);
         root.setOrientation(LinearLayout.VERTICAL);
         int pad = UiHelper.dp(context, 16);
         root.setPadding(pad, pad, pad, pad);
         addView(root);
 
-        // Tarjeta de estado de conexion (GET /health)
+        // 1. Tarjeta de Apariencia y Tema Visual (Modo Oscuro por defecto y Modo Claro)
+        LinearLayout themeCard = UiHelper.createCard(context);
+        themeCard.addView(UiHelper.createSectionTitle(context, "Apariencia y tema visual"));
+
+        final boolean isDark = ThemeManager.isDarkMode(context);
+
+        LinearLayout currentThemeRow = new LinearLayout(context);
+        currentThemeRow.setOrientation(LinearLayout.HORIZONTAL);
+        currentThemeRow.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams ctLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        ctLp.bottomMargin = UiHelper.dp(context, 12);
+        currentThemeRow.setLayoutParams(ctLp);
+
+        TextView tvThemeIcon = new TextView(context);
+        FaIcon.apply(tvThemeIcon, isDark ? "fa-solid fa-moon" : "fa-solid fa-sun");
+        tvThemeIcon.setTextColor(UiHelper.COLOR_PRIMARIO);
+        tvThemeIcon.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+        LinearLayout.LayoutParams ticLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        ticLp.rightMargin = UiHelper.dp(context, 10);
+        tvThemeIcon.setLayoutParams(ticLp);
+        currentThemeRow.addView(tvThemeIcon);
+
+        LinearLayout themeInfoCol = new LinearLayout(context);
+        themeInfoCol.setOrientation(LinearLayout.VERTICAL);
+        themeInfoCol.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView tvThemeTitle = new TextView(context);
+        tvThemeTitle.setText(isDark ? "Modo Oscuro Clasico (Activo)" : "Modo Claro Bancario (Activo)");
+        tvThemeTitle.setTextColor(UiHelper.COLOR_TEXTO);
+        tvThemeTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        tvThemeTitle.setTypeface(Typeface.DEFAULT_BOLD);
+
+        TextView tvThemeSub = new TextView(context);
+        tvThemeSub.setText("La preferencia se guarda en SharedPreferences. Modo Oscuro Clasico es el tema por defecto.");
+        tvThemeSub.setTextColor(UiHelper.COLOR_TEXTO_SECUNDARIO);
+        tvThemeSub.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+
+        themeInfoCol.addView(tvThemeTitle);
+        themeInfoCol.addView(tvThemeSub);
+        currentThemeRow.addView(themeInfoCol);
+        themeCard.addView(currentThemeRow);
+
+        // Selector clasico con botones de Modo Oscuro y Modo Claro (FontAwesome)
+        LinearLayout selectorRow = new LinearLayout(context);
+        selectorRow.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams selLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        selLp.bottomMargin = UiHelper.dp(context, 8);
+        selectorRow.setLayoutParams(selLp);
+
+        LinearLayout btnDarkMode = UiHelper.createActionButton(
+                context,
+                "fa-solid fa-moon",
+                context.getString(R.string.tema_modo_oscuro),
+                isDark ? R.drawable.bg_button_primary : R.drawable.bg_button_secondary,
+                isDark ? UiHelper.COLOR_TEXTO_INVERTIDO : UiHelper.COLOR_TEXTO_SECUNDARIO
+        );
+        LinearLayout.LayoutParams darkLp = new LinearLayout.LayoutParams(0, UiHelper.dp(context, 48), 1f);
+        darkLp.rightMargin = UiHelper.dp(context, 8);
+        btnDarkMode.setLayoutParams(darkLp);
+        btnDarkMode.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ThemeManager.selectTheme(host, true);
+            }
+        });
+
+        LinearLayout btnLightMode = UiHelper.createActionButton(
+                context,
+                "fa-solid fa-sun",
+                context.getString(R.string.tema_modo_claro),
+                !isDark ? R.drawable.bg_button_primary : R.drawable.bg_button_secondary,
+                !isDark ? UiHelper.COLOR_TEXTO_INVERTIDO : UiHelper.COLOR_TEXTO_SECUNDARIO
+        );
+        LinearLayout.LayoutParams lightLp = new LinearLayout.LayoutParams(0, UiHelper.dp(context, 48), 1f);
+        btnLightMode.setLayoutParams(lightLp);
+        btnLightMode.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ThemeManager.selectTheme(host, false);
+            }
+        });
+
+        selectorRow.addView(btnDarkMode);
+        selectorRow.addView(btnLightMode);
+        themeCard.addView(selectorRow);
+
+        LinearLayout btnToggleTheme = UiHelper.createActionButton(
+                context,
+                "fa-solid fa-circle-half-stroke",
+                isDark ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro",
+                R.drawable.bg_button_secondary,
+                UiHelper.COLOR_PRIMARIO
+        );
+        LinearLayout.LayoutParams togLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, UiHelper.dp(context, 44)
+        );
+        btnToggleTheme.setLayoutParams(togLp);
+        btnToggleTheme.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ThemeManager.toggleTheme(host);
+            }
+        });
+        themeCard.addView(btnToggleTheme);
+        root.addView(themeCard);
+
+        // 2. Tarjeta de estado de conexion (GET /health)
         LinearLayout statusCard = UiHelper.createCard(context);
         statusCard.addView(UiHelper.createSectionTitle(context, "Estado de conexion con el servidor"));
 
@@ -105,7 +219,7 @@ public class ConfiguracionView extends ScrollView {
         statusCard.addView(btnCheck);
         root.addView(statusCard);
 
-        // Tarjeta de parametros del cliente (solo lectura segun UI_DESIGN.md Seccion 6)
+        // 3. Tarjeta de parametros del cliente (solo lectura segun UI_DESIGN.md Seccion 6)
         LinearLayout configCard = UiHelper.createCard(context);
         configCard.addView(UiHelper.createSectionTitle(context, "Parametros de red y seguridad (solo lectura)"));
 
