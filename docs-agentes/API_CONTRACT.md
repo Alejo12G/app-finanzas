@@ -1030,3 +1030,108 @@ Si la salida no es JSON valido o no cumple el esquema: `502 ERROR_SERVICIO_IA`. 
 - [ ] Codigos de error tomados exclusivamente de la tabla 3.3.
 - [ ] Cero emojis.
 - [ ] Ninguna dependencia con compilacion nativa local.
+
+
+---
+
+## 11. Modulo de Tarjetas de Credito, cuotas e intereses (extension v1.1.0)
+
+Todas las rutas de esta seccion exigen el header `X-App-Private-Token` y devuelven el sobre estandar `{ ok, data, meta }` de la seccion 3. Sin emojis en ningun campo.
+
+> Unidades: los campos del modulo de tarjetas (`credit_limit`, `available_limit`, `amount`, `monthly_installment_amount`, `total_interest_amount`, `total_with_interest`, `principal`, `interest`, `remaining_balance`) son numeros en unidades de moneda con hasta 2 decimales (ej. `94559.60`). Los campos existentes (`monto_centavos`) siguen en centavos enteros. Las tasas son porcentaje mensual vencido (`2.15` = 2.15% M.V.).
+
+### 11.1 Objeto `CreditCard`
+
+| Campo | Tipo | Descripcion |
+|---|---|---|
+| `id` | integer | Identificador. |
+| `name` | string | 1 a 80 caracteres (ej. "Visa Clasica"). |
+| `bank` | string | 1 a 80 caracteres. |
+| `credit_limit` | number | Cupo total, mayor a 0. |
+| `available_limit` | number | Cupo disponible calculado: `credit_limit` menos el capital pendiente de las compras con la tarjeta. Solo lectura. |
+| `default_interest_rate` | number | Tasa mensual en porcentaje, 0 a 100. |
+| `cutoff_day` | integer | Dia de corte, 1 a 31. |
+| `payment_day` | integer | Dia limite de pago, 1 a 31. |
+
+Calculo del capital pendiente: la primera cuota se considera pagada al cambiar de mes calendario respecto a la fecha de la compra; el saldo se toma de la tabla de amortizacion.
+
+### 11.2 Endpoints de tarjetas
+
+| Metodo | Ruta | Descripcion | Exito |
+|---|---|---|---|
+| GET | `/api/v1/credit-cards` | Lista todas las tarjetas. | 200 (array de `CreditCard`) |
+| GET | `/api/v1/credit-cards/{id}` | Detalle. | 200 |
+| POST | `/api/v1/credit-cards` | Crea. Body: `name`, `bank`, `credit_limit`, `default_interest_rate`, `cutoff_day`, `payment_day` (todos obligatorios). | 201 |
+| PUT | `/api/v1/credit-cards/{id}` | Reemplazo completo, mismo body que POST. | 200 |
+| DELETE | `/api/v1/credit-cards/{id}` | Elimina. Responde `{ "id": n, "eliminado": true }`. | 200 |
+| POST | `/api/v1/credit-cards/simulate` | Simulacion (11.4). | 200 |
+
+Errores: `422 VALIDACION_FALLIDA`, `422 TEXTO_CON_EMOJI`, `404 RECURSO_NO_ENCONTRADO`, `409 TARJETA_EN_USO` (DELETE con transacciones asociadas), `401 TOKEN_INVALIDO`.
+
+### 11.3 Extension de `/transactions`
+
+`/api/v1/transactions` es alias exacto de `/api/v1/transacciones` (mismos metodos y respuestas). Se acepta `payment_method` como alias de `metodo_pago`, con la equivalencia `CREDIT_CARD` = `CREDITO` (tambien `CASH`, `DEBIT`, `TRANSFER`, `OTHER`). El filtro `metodo_pago` acepta ambos valores y se agrega el filtro `card_id`.
+
+Campos adicionales de request cuando el metodo de pago es `CREDIT_CARD` (solo con `tipo = GASTO`):
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `card_id` | integer | Obligatorio; debe existir. |
+| `installments` | integer | 1 a 48. Por defecto 1. |
+| `is_interest_exempt` | boolean | Por defecto `false`. |
+| `applied_interest_rate` | number | 0 a 100. Si `is_interest_exempt` es `true` se fuerza a `0`. Si no se envia, se usa `default_interest_rate` de la tarjeta. |
+
+Campos adicionales en toda respuesta de transaccion (`null` si el metodo de pago no es tarjeta): `payment_method`, `card_id`, `installments`, `is_interest_exempt`, `applied_interest_rate`, `monthly_installment_amount`, `total_interest_amount`, `total_with_interest`. Los tres ultimos se calculan en el servidor a partir de `monto_centavos` y no se aceptan en el request.
+
+### 11.4 `POST /api/v1/credit-cards/simulate`
+
+Request: `{ "amount": number > 0, "installments": 1..48, "interest_rate": 0..100, "is_interest_exempt": boolean }`.
+
+- Si `is_interest_exempt` es `true` o `interest_rate` es `0`: `monthly_installment_amount = amount / installments`, `total_interest_amount = 0`, `total_with_interest = amount`.
+- Si no, con `r = interest_rate / 100` y `n = installments`: `cuota = amount * r / (1 - (1 + r)^-n)`; en cada mes `interest = saldo * r`, `principal = cuota - interest`. La ultima cuota ajusta el saldo a 0.
+
+Response 200:
+
+```json
+{
+  "ok": true,
+  "data": {
+    "amount": 1000000,
+    "installments": 12,
+    "interest_rate": 2,
+    "is_interest_exempt": false,
+    "monthly_installment_amount": 94559.6,
+    "total_interest_amount": 134715.17,
+    "total_with_interest": 1134715.17,
+    "amortization_table": [
+      { "installment_number": 1, "principal": 74559.6, "interest": 20000, "remaining_balance": 925440.4 }
+    ]
+  },
+  "meta": null
+}
+```
+
+`amortization_table` se devuelve siempre (con `interest = 0` en compras exentas).
+
+### 11.5 Extension de `POST /ai/analyze`
+
+El contexto enviado a Gemini incluye `endeudamiento_tarjetas_credito` (montos en centavos, `null` si no hay tarjetas): totales de deuda de capital, intereses pendientes, cuotas mensuales comprometidas, saldo de compras exentas, intereses historicos frente a compras exentas, detalle por tarjeta con compras activas y `orden_sugerido_amortizacion` (mayor tasa mensual primero). El modelo debe recomendar que tarjeta o compra amortizar primero. Se agrega el codigo de alerta `DEUDA_TARJETA` al enum de alertas.
+
+### 11.6 DDL
+
+```sql
+CREATE TABLE credit_cards (
+    id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+    name                  TEXT    NOT NULL,
+    bank                  TEXT    NOT NULL,
+    credit_limit_centavos INTEGER NOT NULL CHECK (credit_limit_centavos > 0),
+    default_interest_rate REAL    NOT NULL DEFAULT 0 CHECK (default_interest_rate >= 0 AND default_interest_rate <= 100),
+    cutoff_day            INTEGER NOT NULL CHECK (cutoff_day BETWEEN 1 AND 31),
+    payment_day           INTEGER NOT NULL CHECK (payment_day BETWEEN 1 AND 31),
+    creado_en             TEXT    NOT NULL,
+    actualizado_en        TEXT    NOT NULL
+);
+-- Columnas agregadas a transacciones (migracion automatica al iniciar):
+-- card_id, installments, is_interest_exempt, applied_interest_rate,
+-- monthly_installment_centavos, total_interest_centavos, total_with_interest_centavos
+```

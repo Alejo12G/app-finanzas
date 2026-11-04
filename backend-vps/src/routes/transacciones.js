@@ -9,12 +9,29 @@ const {
   checkNoEmojisInFields,
   parsePagination
 } = require('../utils/validators');
+const { MAX_INSTALLMENTS, buildSchedule } = require('../utils/credit');
+
+const PAYMENT_METHOD_ALIASES = {
+  CREDIT_CARD: 'CREDITO',
+  CASH: 'EFECTIVO',
+  DEBIT: 'DEBITO',
+  TRANSFER: 'TRANSFERENCIA',
+  OTHER: 'OTRO'
+};
+
+function normalizePaymentMethod(value) {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  return PAYMENT_METHOD_ALIASES[trimmed] || trimmed;
+}
 
 const BASE_TX_SELECT = `
   SELECT
     t.id, t.tipo, t.naturaleza, t.monto_centavos, t.fecha, t.descripcion,
     t.categoria_id, t.metodo_pago, t.comercio, t.notas, t.es_compra,
     t.creado_en, t.actualizado_en,
+    t.card_id, t.installments, t.is_interest_exempt, t.applied_interest_rate,
+    t.monthly_installment_centavos, t.total_interest_centavos, t.total_with_interest_centavos,
     c.id AS cat_id, c.nombre AS cat_nombre, c.tipo AS cat_tipo,
     c.icono AS cat_icono, c.color AS cat_color,
     CASE WHEN t.es_compra = 1
@@ -88,12 +105,21 @@ function listTransacciones(req, res, query) {
   }
 
   if (query.metodo_pago !== undefined && query.metodo_pago !== '') {
-    const mp = String(query.metodo_pago).trim();
+    const mp = normalizePaymentMethod(String(query.metodo_pago));
     if (!ENUMS.METODO_PAGO.includes(mp)) {
       detalles.push({ campo: 'metodo_pago', mensaje: 'Metodo de pago no valido.' });
     } else {
       conditions.push('t.metodo_pago = ?');
       params.push(mp);
+    }
+  }
+
+  if (query.card_id !== undefined && query.card_id !== '') {
+    if (!/^[1-9]\d*$/.test(String(query.card_id).trim())) {
+      detalles.push({ campo: 'card_id', mensaje: 'Debe ser un entero positivo.' });
+    } else {
+      conditions.push('t.card_id = ?');
+      params.push(Number(String(query.card_id).trim()));
     }
   }
 
@@ -158,8 +184,15 @@ function getTransaccion(req, res, id) {
   sendSuccess(res, 200, tx, null);
 }
 
-function validateTransaccionPayload(db, body) {
+function validateTransaccionPayload(db, rawBody) {
+  const body = { ...rawBody };
+  if (body.metodo_pago === undefined && body.payment_method !== undefined) {
+    body.metodo_pago = normalizePaymentMethod(body.payment_method);
+  } else if (body.metodo_pago !== undefined) {
+    body.metodo_pago = normalizePaymentMethod(body.metodo_pago);
+  }
   checkNoEmojisInFields({
+    payment_method: rawBody.payment_method,
     tipo: body.tipo,
     naturaleza: body.naturaleza,
     fecha: body.fecha,
@@ -278,7 +311,10 @@ function validateTransaccionPayload(db, body) {
     );
   }
 
+  const card = validateCardFields(db, body, { tipo, metodoPago, montoCentavos, fecha });
+
   return {
+    ...card,
     tipo,
     naturaleza,
     monto_centavos: montoCentavos,
@@ -288,6 +324,83 @@ function validateTransaccionPayload(db, body) {
     metodo_pago: metodoPago,
     comercio,
     notas
+  };
+}
+
+function emptyCardFields() {
+  return {
+    card_id: null,
+    installments: null,
+    is_interest_exempt: null,
+    applied_interest_rate: null,
+    monthly_installment_centavos: null,
+    total_interest_centavos: null,
+    total_with_interest_centavos: null
+  };
+}
+
+function validateCardFields(db, body, ctx) {
+  if (ctx.metodoPago !== 'CREDITO') {
+    return emptyCardFields();
+  }
+  const detalles = [];
+
+  if (ctx.tipo !== 'GASTO') {
+    detalles.push({ campo: 'payment_method', mensaje: 'CREDIT_CARD solo aplica a transacciones de tipo GASTO.' });
+  }
+
+  const cardId = body.card_id;
+  if (typeof cardId !== 'number' || !Number.isInteger(cardId) || cardId <= 0) {
+    detalles.push({ campo: 'card_id', mensaje: 'Obligatorio con CREDIT_CARD: entero positivo.' });
+  }
+
+  let installments = 1;
+  if (body.installments !== undefined && body.installments !== null) {
+    installments = body.installments;
+    if (typeof installments !== 'number' || !Number.isInteger(installments) || installments < 1 || installments > MAX_INSTALLMENTS) {
+      detalles.push({ campo: 'installments', mensaje: `Debe ser un entero entre 1 y ${MAX_INSTALLMENTS}.` });
+    }
+  }
+
+  let exempt = false;
+  if (body.is_interest_exempt !== undefined && body.is_interest_exempt !== null) {
+    if (typeof body.is_interest_exempt !== 'boolean') {
+      detalles.push({ campo: 'is_interest_exempt', mensaje: 'Debe ser booleano.' });
+    } else {
+      exempt = body.is_interest_exempt;
+    }
+  }
+
+  let providedRate = null;
+  if (body.applied_interest_rate !== undefined && body.applied_interest_rate !== null) {
+    providedRate = body.applied_interest_rate;
+    if (typeof providedRate !== 'number' || !Number.isFinite(providedRate) || providedRate < 0 || providedRate > 100) {
+      detalles.push({ campo: 'applied_interest_rate', mensaje: 'Debe ser un numero entre 0 y 100.' });
+    }
+  }
+
+  if (detalles.length > 0) {
+    throw new AppError(422, 'VALIDACION_FALLIDA', 'Uno o mas campos no son validos.', detalles);
+  }
+
+  const card = db.prepare('SELECT * FROM credit_cards WHERE id = ?').get(cardId);
+  if (!card) {
+    throw new AppError(422, 'VALIDACION_FALLIDA', 'La tarjeta indicada no existe.', [
+      { campo: 'card_id', mensaje: 'La tarjeta no existe.' }
+    ]);
+  }
+
+  const rate = exempt ? 0 : providedRate !== null ? providedRate : Number(card.default_interest_rate);
+  const schedule = buildSchedule(ctx.montoCentavos, installments, rate, exempt);
+
+  return {
+    card_id: cardId,
+    installments,
+    is_interest_exempt: exempt ? 1 : 0,
+    applied_interest_rate: rate,
+    monthly_installment_centavos: schedule.installmentCents,
+    total_interest_centavos: schedule.totalInterestCents,
+    total_with_interest_centavos: schedule.totalWithInterestCents
   };
 }
 
@@ -301,8 +414,10 @@ function createTransaccion(req, res, body) {
       INSERT INTO transacciones (
         tipo, naturaleza, monto_centavos, fecha, descripcion,
         categoria_id, metodo_pago, comercio, notas, es_compra,
+        card_id, installments, is_interest_exempt, applied_interest_rate,
+        monthly_installment_centavos, total_interest_centavos, total_with_interest_centavos,
         creado_en, actualizado_en
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     .run(
       valid.tipo,
@@ -314,6 +429,13 @@ function createTransaccion(req, res, body) {
       valid.metodo_pago,
       valid.comercio,
       valid.notas,
+      valid.card_id,
+      valid.installments,
+      valid.is_interest_exempt,
+      valid.applied_interest_rate,
+      valid.monthly_installment_centavos,
+      valid.total_interest_centavos,
+      valid.total_with_interest_centavos,
       now,
       now
     );
@@ -342,7 +464,10 @@ function updateTransaccion(req, res, id, body) {
   db.prepare(`
     UPDATE transacciones
     SET tipo = ?, naturaleza = ?, monto_centavos = ?, fecha = ?, descripcion = ?,
-        categoria_id = ?, metodo_pago = ?, comercio = ?, notas = ?, actualizado_en = ?
+        categoria_id = ?, metodo_pago = ?, comercio = ?, notas = ?,
+        card_id = ?, installments = ?, is_interest_exempt = ?, applied_interest_rate = ?,
+        monthly_installment_centavos = ?, total_interest_centavos = ?, total_with_interest_centavos = ?,
+        actualizado_en = ?
     WHERE id = ?
   `).run(
     valid.tipo,
@@ -354,6 +479,13 @@ function updateTransaccion(req, res, id, body) {
     valid.metodo_pago,
     valid.comercio,
     valid.notas,
+    valid.card_id,
+    valid.installments,
+    valid.is_interest_exempt,
+    valid.applied_interest_rate,
+    valid.monthly_installment_centavos,
+    valid.total_interest_centavos,
+    valid.total_with_interest_centavos,
     now,
     id
   );

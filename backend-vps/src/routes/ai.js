@@ -6,6 +6,7 @@ const { getPreviousYearMonth, buildDashboardData } = require('./dashboard');
 const { getPresupuestosForPeriod } = require('./presupuestos');
 const { validateCompraPayload, insertCompraInDb } = require('./compras');
 const { AppError, sendSuccess } = require('../utils/response');
+const { getCardDebtSummary } = require('../utils/credit');
 const {
   ENUMS,
   stripEmojis,
@@ -167,6 +168,82 @@ async function callGeminiWithFallback(systemInstruction, userPrompt, responseSch
   }
 }
 
+function buildCreditCardContext(db) {
+  const summary = getCardDebtSummary(db);
+  if (summary.length === 0) {
+    return null;
+  }
+
+  const tarjetas = summary.map((s) => {
+    const limite = Number(s.card.credit_limit_centavos);
+    return {
+      tarjeta_id: Number(s.card.id),
+      nombre: s.card.name,
+      banco: s.card.bank,
+      cupo_total_centavos: limite,
+      cupo_disponible_centavos: limite - s.debt_cents,
+      utilizacion_cupo_porcentaje: limite > 0 ? Number(((s.debt_cents / limite) * 100).toFixed(2)) : 0,
+      tasa_mensual_por_defecto: Number(s.card.default_interest_rate),
+      dia_corte: Number(s.card.cutoff_day),
+      dia_pago: Number(s.card.payment_day),
+      deuda_capital_pendiente_centavos: s.debt_cents,
+      intereses_pendientes_centavos: s.pending_interest_cents,
+      cuotas_mensuales_comprometidas_centavos: s.monthly_commitment_cents,
+      compras_con_interes_historico_centavos: s.interest_purchases_cents,
+      compras_exentas_historico_centavos: s.exempt_purchases_cents,
+      intereses_totales_historico_centavos: s.total_interest_all_cents,
+      compras_activas: s.active
+    };
+  });
+
+  // Orden sugerido de amortizacion: mayor tasa mensual primero (metodo avalancha)
+  const candidatas = [];
+  for (const t of tarjetas) {
+    for (const p of t.compras_activas) {
+      if (!p.exenta_de_interes) {
+        candidatas.push({
+          tarjeta_id: t.tarjeta_id,
+          tarjeta_nombre: t.nombre,
+          transaccion_id: p.transaccion_id,
+          descripcion: p.descripcion,
+          tasa_mensual_aplicada: p.tasa_mensual_aplicada,
+          saldo_capital_pendiente_centavos: p.saldo_capital_pendiente_centavos,
+          intereses_pendientes_centavos: p.intereses_pendientes_centavos
+        });
+      }
+    }
+  }
+  candidatas.sort(
+    (a, b) =>
+      b.tasa_mensual_aplicada - a.tasa_mensual_aplicada ||
+      b.intereses_pendientes_centavos - a.intereses_pendientes_centavos
+  );
+
+  const sum = (key) => tarjetas.reduce((acc, t) => acc + t[key], 0);
+  const exentasPendientes = tarjetas.reduce(
+    (acc, t) =>
+      acc +
+      t.compras_activas
+        .filter((p) => p.exenta_de_interes)
+        .reduce((a, p) => a + p.saldo_capital_pendiente_centavos, 0),
+    0
+  );
+
+  return {
+    totales: {
+      deuda_capital_pendiente_centavos: sum('deuda_capital_pendiente_centavos'),
+      intereses_pendientes_centavos: sum('intereses_pendientes_centavos'),
+      cuotas_mensuales_comprometidas_centavos: sum('cuotas_mensuales_comprometidas_centavos'),
+      saldo_pendiente_compras_exentas_centavos: exentasPendientes,
+      intereses_totales_historico_centavos: sum('intereses_totales_historico_centavos'),
+      compras_con_interes_historico_centavos: sum('compras_con_interes_historico_centavos'),
+      compras_exentas_historico_centavos: sum('compras_exentas_historico_centavos')
+    },
+    tarjetas,
+    orden_sugerido_amortizacion: candidatas.slice(0, 10)
+  };
+}
+
 function buildAggregatedContext(db, anio, mes) {
   const dash = buildDashboardData(db, anio, mes);
   const pres = getPresupuestosForPeriod(db, anio, mes, null);
@@ -251,6 +328,7 @@ function buildAggregatedContext(db, anio, mes) {
       cantidad_total: Number(a.cantidad_total),
       gasto_acumulado_centavos: Number(a.gasto_acumulado_centavos)
     })),
+    endeudamiento_tarjetas_credito: buildCreditCardContext(db),
     catalogo_categorias: categoriasActivas.map((c) => ({
       id: Number(c.id),
       nombre: c.nombre,
@@ -297,6 +375,7 @@ const ANALYZE_RESPONSE_SCHEMA = {
               'BALANCE_NEGATIVO',
               'GASTO_INUSUAL',
               'AHORRO_BAJO',
+              'DEUDA_TARJETA',
               'OTRO'
             ]
           },
@@ -582,7 +661,9 @@ async function analyzeFinances(req, res, body) {
     '2. PROHIBIDO usar emojis, emoticonos o simbolos Unicode decorativos.',
     '3. Todos los montos en el contexto estan expresados en centavos enteros (divide entre 100 para expresar cifras en la moneda en textos legibles, pero devuelve ahorro_estimado_centavos siempre en centavos enteros).',
     '4. Basa tus conclusiones estrictamente en los datos agregados proporcionados del periodo consultado y los 3 meses previos.',
-    '5. Devuelve unicamente un objeto JSON que cumpla el esquema solicitado.'
+    '5. Devuelve unicamente un objeto JSON que cumpla el esquema solicitado.',
+    '6. Si datos_financieros_agregados.endeudamiento_tarjetas_credito no es null, analiza el endeudamiento en tarjetas de credito: deuda de capital pendiente, utilizacion del cupo, cuotas mensuales comprometidas, y cuanto dinero se va en intereses frente a compras exentas de interes (0%).',
+    '7. En ese caso incluye al menos una recomendacion que indique que tarjeta o compra a cuotas amortizar o abonar primero, priorizando la mayor tasa mensual aplicada (ver orden_sugerido_amortizacion) y justificando con el ahorro estimado en intereses pendientes. Las compras exentas de interes no deben priorizarse para abono anticipado. Usa el codigo de alerta DEUDA_TARJETA cuando la utilizacion del cupo supere 70 por ciento o los intereses pendientes sean altos.'
   ].join('\n');
 
   const userPrompt = JSON.stringify({
@@ -689,6 +770,7 @@ async function analyzeFinances(req, res, body) {
 }
 
 module.exports = {
+  buildAggregatedContext,
   analyzeFinances,
   handleParseCompraLibre,
   resetAiRateLimitForTests

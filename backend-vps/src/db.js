@@ -127,6 +127,40 @@ function getDb() {
     );
   `);
 
+  // Modulo de tarjetas de credito (migracion idempotente)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS credit_cards (
+        id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+        name                  TEXT    NOT NULL,
+        bank                  TEXT    NOT NULL,
+        credit_limit_centavos INTEGER NOT NULL CHECK (credit_limit_centavos > 0),
+        default_interest_rate REAL    NOT NULL DEFAULT 0 CHECK (default_interest_rate >= 0 AND default_interest_rate <= 100),
+        cutoff_day            INTEGER NOT NULL CHECK (cutoff_day BETWEEN 1 AND 31),
+        payment_day           INTEGER NOT NULL CHECK (payment_day BETWEEN 1 AND 31),
+        creado_en             TEXT    NOT NULL,
+        actualizado_en        TEXT    NOT NULL
+    );
+  `);
+
+  const txColumns = new Set(
+    db.prepare('PRAGMA table_info(transacciones)').all().map((c) => c.name)
+  );
+  const cardColumns = [
+    ['card_id', 'INTEGER REFERENCES credit_cards(id) ON DELETE RESTRICT'],
+    ['installments', 'INTEGER'],
+    ['is_interest_exempt', 'INTEGER'],
+    ['applied_interest_rate', 'REAL'],
+    ['monthly_installment_centavos', 'INTEGER'],
+    ['total_interest_centavos', 'INTEGER'],
+    ['total_with_interest_centavos', 'INTEGER']
+  ];
+  for (const [col, def] of cardColumns) {
+    if (!txColumns.has(col)) {
+      db.exec(`ALTER TABLE transacciones ADD COLUMN ${col} ${def}`);
+    }
+  }
+  db.exec('CREATE INDEX IF NOT EXISTS idx_transacciones_card ON transacciones(card_id)');
+
   const versionRow = db.prepare('SELECT version FROM schema_version LIMIT 1').get();
   if (!versionRow) {
     const now = nowIsoUtc();
@@ -176,6 +210,8 @@ function formatCategoria(row) {
 
 function formatTransaccion(row) {
   const esCompra = Number(row.es_compra) === 1;
+  const isCard = row.metodo_pago === 'CREDITO' && row.card_id !== undefined && row.card_id !== null;
+  const cents = (v) => (v === undefined || v === null ? null : Number((Number(v) / 100).toFixed(2)));
   return {
     id: Number(row.id),
     tipo: row.tipo,
@@ -186,6 +222,14 @@ function formatTransaccion(row) {
     categoria_id: Number(row.categoria_id),
     categoria: formatCategoriaResumen(row),
     metodo_pago: row.metodo_pago,
+    payment_method: row.metodo_pago === 'CREDITO' ? 'CREDIT_CARD' : row.metodo_pago,
+    card_id: isCard ? Number(row.card_id) : null,
+    installments: isCard ? Number(row.installments || 1) : null,
+    is_interest_exempt: isCard ? Number(row.is_interest_exempt) === 1 : null,
+    applied_interest_rate: isCard ? Number(row.applied_interest_rate || 0) : null,
+    monthly_installment_amount: isCard ? cents(row.monthly_installment_centavos) : null,
+    total_interest_amount: isCard ? cents(row.total_interest_centavos) : null,
+    total_with_interest: isCard ? cents(row.total_with_interest_centavos) : null,
     comercio: row.comercio === undefined || row.comercio === null ? null : row.comercio,
     notas: row.notas === undefined || row.notas === null ? null : row.notas,
     es_compra: esCompra,

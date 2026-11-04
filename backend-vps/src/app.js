@@ -38,6 +38,14 @@ const {
   updatePresupuesto,
   deletePresupuesto
 } = require('./routes/presupuestos');
+const {
+  listCards,
+  getCard,
+  createCard,
+  updateCard,
+  deleteCard,
+  simulateCard
+} = require('./routes/tarjetas');
 const { getDashboard } = require('./routes/dashboard');
 const { analyzeFinances, handleParseCompraLibre } = require('./routes/ai');
 
@@ -215,8 +223,47 @@ async function handleRequest(req, res) {
       throw new AppError(404, 'RUTA_NO_ENCONTRADA', 'La ruta solicitada no existe.');
     }
 
-    // /api/v1/transacciones y /api/v1/transacciones/{id}
-    if (segments[0] === 'transacciones') {
+    // /api/v1/credit-cards, /api/v1/credit-cards/simulate y /api/v1/credit-cards/{id}
+    if (segments[0] === 'credit-cards') {
+      if (segments.length === 1) {
+        ensureMethod(method, ['GET', 'POST']);
+        if (method === 'GET') {
+          listCards(req, res);
+          return;
+        }
+        const body = await readJsonBody(req);
+        createCard(req, res, body);
+        return;
+      }
+      if (segments.length === 2) {
+        if (segments[1] === 'simulate') {
+          ensureMethod(method, ['POST']);
+          const body = await readJsonBody(req);
+          simulateCard(req, res, body);
+          return;
+        }
+        ensureMethod(method, ['GET', 'PUT', 'DELETE']);
+        const id = parsePositiveIntId(segments[1]);
+        if (id === null) {
+          throw new AppError(404, 'RECURSO_NO_ENCONTRADO', 'Identificador de tarjeta invalido.');
+        }
+        if (method === 'GET') {
+          getCard(req, res, id);
+          return;
+        }
+        if (method === 'PUT') {
+          const body = await readJsonBody(req);
+          updateCard(req, res, id, body);
+          return;
+        }
+        deleteCard(req, res, id);
+        return;
+      }
+      throw new AppError(404, 'RUTA_NO_ENCONTRADA', 'La ruta solicitada no existe.');
+    }
+
+    // /api/v1/transacciones (alias /transactions) y /{id}
+    if (segments[0] === 'transacciones' || segments[0] === 'transactions') {
       if (segments.length === 1) {
         ensureMethod(method, ['GET', 'POST']);
         if (method === 'GET') {

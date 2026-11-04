@@ -21,6 +21,7 @@ const ENUMS = {
     'BALANCE_NEGATIVO',
     'GASTO_INUSUAL',
     'AHORRO_BAJO',
+    'DEUDA_TARJETA',
     'OTRO'
   ]
 };

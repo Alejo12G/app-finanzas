@@ -1,7 +1,7 @@
 # STATUS.md - Tablero de Estado Multi-Agente
 
 **Contrato vigente:** `API_CONTRACT.md` v1.0.0 | `UI_DESIGN.md` v1.0.0
-**Ultima actualizacion:** 2026-11-03 (Arquitecto)
+**Ultima actualizacion:** 2026-11-03 (Agente Backend: modulo de tarjetas de credito, rama `feature/tarjetas-credito`)
 
 ## 1. Estado general
 
@@ -37,6 +37,12 @@
 | Endpoint `/dashboard` | COMPLETADO |
 | Endpoint `/ai/analyze` (Gemini) | COMPLETADO |
 | Despliegue en VPS puerto `54892` | COMPLETADO |
+| Modulo Tarjetas de Credito: tabla `credit_cards` y CRUD `/credit-cards` | COMPLETADO |
+| Compras a cuotas en `/transactions` (`card_id`, `installments`, intereses, exentas) | COMPLETADO |
+| Simulador `POST /credit-cards/simulate` con tabla de amortizacion | COMPLETADO |
+| Contexto de endeudamiento en tarjetas para `/ai/analyze` | COMPLETADO |
+| Documentacion en `API_CONTRACT.md` seccion 11 | COMPLETADO |
+| Despliegue del modulo de tarjetas en VPS | PENDIENTE |
 
 ### 2.2 PC
 
