@@ -27,6 +27,7 @@ public final class UiHelper {
     public static int COLOR_EXITO = 0xFF38A169;
     public static int COLOR_PELIGRO = 0xFFE53E3E;
     public static int COLOR_ADVERTENCIA = 0xFFD69E2E;
+    public static int COLOR_ADVERTENCIA_VENCIMIENTO = 0xFFD97706;
     public static int COLOR_FONDO = 0xFF12161F;
     public static int COLOR_SUPERFICIE = 0xFF1A202C;
     public static int COLOR_TABLA_FILA_ALT = 0xFF222938;
@@ -65,6 +66,7 @@ public final class UiHelper {
         COLOR_PELIGRO = getColor(context, R.color.colorExpenseRed, darkModeActive ? 0xFFE53E3E : 0xFFC62828);
 
         COLOR_ADVERTENCIA = getColor(context, R.color.color_advertencia, darkModeActive ? 0xFFD69E2E : 0xFFB26A00);
+        COLOR_ADVERTENCIA_VENCIMIENTO = getColor(context, R.color.colorWarningPaymentDue, 0xFFD97706);
         COLOR_PRIMARIO_SUAVE = getColor(context, R.color.color_primario_suave, darkModeActive ? 0xFF222938 : 0xFFE8ECF3);
         COLOR_TEXTO_DESHABILITADO = getColor(context, R.color.color_texto_deshabilitado, darkModeActive ? 0xFF64748B : 0xFFA0AEC0);
         COLOR_TEXTO_INVERTIDO = getColor(context, R.color.color_texto_invertido, 0xFFFFFFFF);

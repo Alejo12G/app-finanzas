@@ -32,6 +32,7 @@
     <color name="color_texto_deshabilitado">#64748B</color>
     <color name="color_texto_invertido">#FFFFFF</color>
     <color name="color_advertencia">#D69E2E</color>
+    <color name="colorWarningPaymentDue">#D97706</color>
     <color name="color_exito_suave">#1C3128</color>
     <color name="color_peligro_suave">#321C22</color>
     <color name="color_advertencia_suave">#332818</color>

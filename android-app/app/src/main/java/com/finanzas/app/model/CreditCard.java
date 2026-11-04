@@ -9,7 +9,8 @@ import java.util.List;
 
 /**
  * Modelo de Tarjeta de Credito segun contrato JSON de /api/v1/credit-cards (API_CONTRACT.md Seccion 11.1).
- * Campos exactos: id, name, bank, credit_limit, available_limit, default_interest_rate, cutoff_day, payment_day.
+ * Campos exactos: id, name, bank, credit_limit, available_limit, default_interest_rate, cutoff_day, payment_day,
+ * next_cutoff_date, next_payment_date, minimum_payment, full_payment, total_debt.
  */
 public class CreditCard {
     public int id;
@@ -20,6 +21,11 @@ public class CreditCard {
     public double default_interest_rate;
     public int cutoff_day;
     public int payment_day;
+    public String next_cutoff_date;
+    public String next_payment_date;
+    public double minimum_payment;
+    public double full_payment;
+    public double total_debt;
 
     public static CreditCard fromJson(JSONObject obj) {
         if (obj == null) {
@@ -36,6 +42,14 @@ public class CreditCard {
         card.default_interest_rate = obj.optDouble("default_interest_rate", 0.0);
         card.cutoff_day = obj.optInt("cutoff_day", 1);
         card.payment_day = obj.optInt("payment_day", 1);
+        card.next_cutoff_date = obj.isNull("next_cutoff_date") ? "" : obj.optString("next_cutoff_date", "");
+        card.next_payment_date = obj.isNull("next_payment_date") ? "" : obj.optString("next_payment_date", "");
+        card.minimum_payment = obj.optDouble("minimum_payment", 0.0);
+        card.full_payment = obj.optDouble("full_payment", 0.0);
+        double defaultDebt = Math.max(0.0, card.credit_limit - card.available_limit);
+        card.total_debt = obj.has("total_debt") && !obj.isNull("total_debt")
+                ? obj.optDouble("total_debt", defaultDebt)
+                : defaultDebt;
         return card;
     }
 

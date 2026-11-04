@@ -134,19 +134,17 @@
         android:max="100"
         android:progressTint="@color/colorPrimaryAccent" />
 
-    <!-- Fechas de corte y limite de pago -->
+    <!-- Fechas reales de facturacion: Proximo corte (next_cutoff_date) y Limite de pago (next_payment_date) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/colorTableRowAlt"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:padding="@dimen/space_8">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -161,17 +159,18 @@
 
             <TextView
                 android:id="@+id/tvCardCutoffDay"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="@dimen/text_label"
                 android:textStyle="bold" />
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_marginTop="6dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -181,16 +180,228 @@
                 android:layout_height="wrap_content"
                 android:layout_marginRight="@dimen/space_8"
                 android:contentDescription="@null"
-                android:textColor="@color/color_advertencia"
+                android:textColor="@color/colorWarningPaymentDue"
                 android:textSize="13sp" />
 
             <TextView
                 android:id="@+id/tvCardPaymentDay"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/colorTextPrimary"
+                android:textSize="@dimen/text_label"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Bloque de Facturacion y Pago del Mes (minimum_payment, full_payment, total_debt) -->
+    <LinearLayout
+        android:id="@+id/layoutCardBillingSummary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_8"
+        android:background="@drawable/bg_input"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:text="FACTURACION Y SALDOS DEL CICLO"
+            android:textColor="@color/colorPrimaryAccent"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Pago Minimo:"
+                android:textColor="@color/colorTextSecondary"
+                android:textSize="@dimen/text_label" />
+
+            <TextView
+                android:id="@+id/tvCardMinimumPayment"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="@dimen/text_label"
                 android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Pago Total (0% interes):"
+                android:textColor="@color/colorTextSecondary"
+                android:textSize="@dimen/text_label" />
+
+            <TextView
+                android:id="@+id/tvCardFullPayment"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/colorIncomeGreen"
+                android:textSize="@dimen/text_label"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="6dp"
+            android:background="@color/colorBorderDivider" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Deuda Total (total_debt):"
+                android:textColor="@color/colorTextPrimary"
+                android:textSize="@dimen/text_label"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvCardTotalDebt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/colorExpenseRed"
+                android:textSize="@dimen/text_base"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Botones de accion rapida de pago (visibles cuando total_debt > 0) -->
+    <LinearLayout
+        android:id="@+id/layoutCardPaymentActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_8"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/btnPayMinimum"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_button_primary"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp">
+
+            <TextView
+                android:id="@+id/tvBtnPayMinimumIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="6dp"
+                android:contentDescription="@null"
+                android:textColor="@color/color_texto_invertido"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvBtnPayMinimumText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pagar Minimo"
+                android:textColor="@color/color_texto_invertido"
+                android:textSize="@dimen/text_label"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/btnPayFull"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_marginRight="6dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_button_secondary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp">
+
+                <TextView
+                    android:id="@+id/tvBtnPayFullIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="6dp"
+                    android:contentDescription="@null"
+                    android:textColor="@color/colorPrimaryAccent"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvBtnPayFullText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pagar Total"
+                    android:textColor="@color/colorPrimaryAccent"
+                    android:textSize="@dimen/text_label"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btnPayOther"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_button_secondary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp">
+
+                <TextView
+                    android:id="@+id/tvBtnPayOtherIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="6dp"
+                    android:contentDescription="@null"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvBtnPayOtherText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Otro valor..."
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="@dimen/text_label"
+                    android:textStyle="bold" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 

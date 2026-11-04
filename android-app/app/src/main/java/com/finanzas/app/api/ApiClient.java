@@ -515,6 +515,45 @@ public class ApiClient {
         }, callback);
     }
 
+    // 11.2 POST /credit-cards/{id}/payments
+    public void payCreditCard(
+            long cardId,
+            double amount,
+            String paymentType,
+            String paymentMethod,
+            String date,
+            String notes,
+            boolean createTransaction,
+            ApiCallback<JSONObject> callback) {
+        try {
+            JSONObject body = new JSONObject();
+            body.put("amount", amount);
+            body.put("payment_type", (paymentType != null && !paymentType.trim().isEmpty()) ? paymentType.trim() : "MINIMO");
+            body.put("payment_method", (paymentMethod != null && !paymentMethod.trim().isEmpty()) ? paymentMethod.trim() : "DEBITO");
+            if (date != null && !date.trim().isEmpty()) {
+                body.put("date", date.trim());
+            }
+            if (notes == null || notes.trim().isEmpty()) {
+                body.put("notes", JSONObject.NULL);
+            } else {
+                body.put("notes", notes.trim());
+            }
+            body.put("create_transaction", createTransaction);
+
+            executeRequest("POST", "/credit-cards/" + cardId + "/payments", body, AppConfig.TIMEOUT_DEFAULT_MS, new DataParser<JSONObject>() {
+                @Override
+                public JSONObject parse(Object rawData) {
+                    if (rawData instanceof JSONObject) {
+                        return (JSONObject) rawData;
+                    }
+                    return new JSONObject();
+                }
+            }, callback);
+        } catch (Exception e) {
+            postError(callback, new ApiError(400, "JSON_INVALIDO", "Datos de pago invalidos.", false));
+        }
+    }
+
     // 7.3.5 DELETE /transacciones/{id}
     public void eliminarTransaccion(int id, ApiCallback<Boolean> callback) {
         executeRequest("DELETE", "/transacciones/" + id, null, AppConfig.TIMEOUT_DEFAULT_MS, new DataParser<Boolean>() {

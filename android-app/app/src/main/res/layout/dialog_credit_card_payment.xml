@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/colorSurfaceCard">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_16">
+
+        <TextView
+            android:id="@+id/tvDialogPaymentTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Registrar pago de tarjeta"
+            android:textColor="@color/colorPrimaryAccent"
+            android:textSize="@dimen/text_subtitle"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvDialogPaymentSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="@dimen/space_8"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label" />
+
+        <TextView
+            android:id="@+id/tvPaymentGlobalError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Resumen de saldos de la tarjeta -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:background="@color/colorTableRowAlt"
+            android:orientation="vertical"
+            android:padding="@dimen/space_8">
+
+            <TextView
+                android:id="@+id/tvPaymentInfoMinimum"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/colorTextSecondary"
+                android:textSize="@dimen/text_label" />
+
+            <TextView
+                android:id="@+id/tvPaymentInfoFull"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/colorTextSecondary"
+                android:textSize="@dimen/text_label" />
+
+            <TextView
+                android:id="@+id/tvPaymentInfoDebt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/colorTextPrimary"
+                android:textSize="@dimen/text_label"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Monto a pagar (amount) -->
+        <TextView
+            android:id="@+id/tvLabelPaymentAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Monto a pagar (amount) *"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etPaymentAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="0.00"
+            android:inputType="numberDecimal"
+            android:paddingLeft="12dp"
+            android:paddingTop="10dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/colorTextPrimary"
+            android:textColorHint="@color/color_texto_deshabilitado"
+            android:textSize="@dimen/text_base" />
+
+        <TextView
+            android:id="@+id/errPaymentAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Metodo de debito / pago (payment_method) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Metodo de pago (payment_method) *"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spPaymentMethod"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:padding="4dp" />
+
+        <!-- Fecha de pago (date) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Fecha de pago (YYYY-MM-DD) *"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/etPaymentDate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="@dimen/space_8"
+                android:layout_weight="1"
+                android:background="@drawable/bg_input"
+                android:hint="YYYY-MM-DD"
+                android:paddingLeft="12dp"
+                android:paddingTop="10dp"
+                android:paddingRight="12dp"
+                android:paddingBottom="10dp"
+                android:textColor="@color/colorTextPrimary"
+                android:textColorHint="@color/color_texto_deshabilitado"
+                android:textSize="@dimen/text_base" />
+
+            <LinearLayout
+                android:id="@+id/btnPickPaymentDate"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_height"
+                android:background="@drawable/bg_button_secondary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp">
+
+                <TextView
+                    android:id="@+id/tvPickPaymentDateIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="@null"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="@dimen/text_base" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/errPaymentDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Casilla de verificacion: Crear transaccion contable -->
+        <CheckBox
+            android:id="@+id/cbCreateTransaction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:checked="true"
+            android:text="Crear transaccion contable automaticamente"
+            android:textColor="@color/colorTextPrimary"
+            android:textSize="@dimen/text_base"
+            android:textStyle="bold" />
+
+        <!-- Campo opcional de notas -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Notas (opcional)"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etPaymentNotes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="Pago de tarjeta desde la aplicacion"
+            android:paddingLeft="12dp"
+            android:paddingTop="10dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/colorTextPrimary"
+            android:textColorHint="@color/color_texto_deshabilitado"
+            android:textSize="@dimen/text_base" />
+
+        <TextView
+            android:id="@+id/errPaymentNotes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Botones inferiores: Cancelar y Confirmar Pago -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_16"
+            android:gravity="end"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/btnCancelPayment"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginRight="@dimen/space_8"
+                android:background="@drawable/bg_button_secondary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp">
+
+                <TextView
+                    android:id="@+id/tvBtnCancelPaymentIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="@dimen/space_8"
+                    android:contentDescription="@null"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="@dimen/text_base" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cancelar"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="@dimen/text_base"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btnConfirmPayment"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_height"
+                android:background="@drawable/bg_button_primary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp">
+
+                <TextView
+                    android:id="@+id/tvBtnConfirmPaymentIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="@dimen/space_8"
+                    android:contentDescription="@null"
+                    android:textColor="@color/color_texto_invertido"
+                    android:textSize="@dimen/text_base" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Confirmar Pago"
+                    android:textColor="@color/color_texto_invertido"
+                    android:textSize="@dimen/text_base"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

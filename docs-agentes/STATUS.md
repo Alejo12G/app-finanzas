@@ -1,7 +1,7 @@
 # STATUS.md - Tablero de Estado Multi-Agente
 
 **Contrato vigente:** `API_CONTRACT.md` v1.0.0 | `UI_DESIGN.md` v1.0.0
-**Ultima actualizacion:** 2026-11-03 (Agente PC: modulo de tarjetas de credito, compras a cuotas con simulador y exencion de intereses en `/pc-app`, rama `feature/tarjetas-credito`)
+**Ultima actualizacion:** 2026-11-04 (Agente Android: ciclos reales de facturacion, pago minimo/total y registro de pagos de tarjetas en `/android-app`, rama `feature/tarjetas-pagos-android`)
 
 ## 1. Estado general
 
@@ -9,7 +9,7 @@
 |---|---|---|---|---|---|---|
 | Backend | Agente Backend | `/backend-vps` | `feature/ciclos-pago-tarjetas` | COMPLETADO | 2026-11-04 | Ciclos reales de corte y pago (corte > pago -> mes siguiente), calculo automatico de fechas de facturacion, saldo de extracto, pago minimo y pago total en `CreditCard`, endpoints `POST/GET /api/v1/credit-cards/{id}/payments` para registro de pagos con generacion automatica de transaccion contable, y tests unitarios y de contrato superados |
 | PC | Agente PC | `/pc-app` | `feature/tarjetas-credito` | COMPLETADO | 2026-11-03 | Cliente de escritorio Node.js ultraligero con modulo completo de Tarjetas de Credito (`/api/v1/credit-cards`), visualizacion de cupos y fechas de corte/pago, panel contable de compras a cuotas con simulador en tiempo real (exencion 0% o tasa M.V.), etiquetas e indicadores clasicos FontAwesome `[EXENTA 0%]` y `[CON INTERES]`, y cero emojis |
-| Android | Agente Android | `/android-app` | `feature/tarjetas-credito` | COMPLETADO | 2026-11-03 | Cliente Android nativo en Java puro (cero dependencias pesadas), sistema de Temas (Modo Oscuro Clasico por defecto + Modo Claro), gestion completa de Tarjetas de Credito (`/api/v1/credit-cards`, `CreditCard.java`, `TarjetasView`, `CreditCardFormDialog`) y registro de compras a cuotas con tarjeta (`CREDIT_CARD`) en `POST /api/v1/transactions` con opcion exenta de intereses (`is_interest_exempt`) y calculo contable en vivo (`CreditCalculator.java`) |
+| Android | Agente Android | `/android-app` | `feature/tarjetas-pagos-android` | COMPLETADO | 2026-11-04 | Cliente Android nativo en Java puro (cero dependencias pesadas), sistema de Temas (Modo Oscuro Clasico por defecto + Modo Claro), gestion completa de Tarjetas de Credito (`/api/v1/credit-cards`), visualizacion de fechas reales de facturacion (`next_cutoff_date`, `next_payment_date` con alerta de vencimiento `<= 3 dias` en `#D97706`), saldos de pago minimo/total/deuda total y dialogo de pago (`PaymentCardDialog` -> `POST /api/v1/credit-cards/{id}/payments`) |
 
 ### Estados permitidos
 
@@ -79,6 +79,8 @@
 | Configuracion / estado de conexion | COMPLETADO |
 | Gestion de Tarjetas de Credito (`/api/v1/credit-cards`, `CreditCard.java`, XML nativo) | COMPLETADO |
 | Formulario de compra/gasto con `CREDIT_CARD`, cuotas, exencion de intereses (`0%`) y resumen contable en vivo (`POST /api/v1/transactions`) | COMPLETADO |
+| Visualizacion de fechas reales de facturacion (`next_cutoff_date`, `next_payment_date`), pago minimo (`minimum_payment`), pago total (`full_payment`) y deuda total (`total_debt`) | COMPLETADO |
+| Acciones rapidas ("Pagar Minimo", "Pagar Total", "Otro valor...") y dialogo `PaymentCardDialog` conectado a `POST /api/v1/credit-cards/{id}/payments` | COMPLETADO |
 
 ## 3. Bloqueos y preguntas al Arquitecto
 

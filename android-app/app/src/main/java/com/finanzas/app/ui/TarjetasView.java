@@ -19,17 +19,22 @@ import com.finanzas.app.api.ApiError;
 import com.finanzas.app.model.CreditCard;
 import com.finanzas.app.model.PaginacionMeta;
 import com.finanzas.app.ui.dialogs.CreditCardFormDialog;
+import com.finanzas.app.ui.dialogs.PaymentCardDialog;
 import com.finanzas.app.util.CurrencyUtils;
+import com.finanzas.app.util.DateUtils;
 import com.finanzas.app.util.FaIcon;
 import com.finanzas.app.util.UiHelper;
+
+import org.json.JSONObject;
 
 import java.util.List;
 import java.util.Locale;
 
 /**
  * Vista de Gestion de Tarjetas de Credito (/api/v1/credit-cards).
- * Muestra en tarjetas visuales sobrias el cupo disponible, fechas de corte/pago
- * y la tasa de interes mensual por defecto de cada plastico.
+ * Muestra en tarjetas visuales sobrias el cupo disponible, fechas reales de facturacion
+ * (next_cutoff_date y next_payment_date), saldos de pago minimo/total/deuda total
+ * y acciones rapidas de pago ("Pagar Minimo", "Pagar Total" y "Otro valor...").
  */
 public class TarjetasView extends ScrollView {
 
@@ -157,17 +162,104 @@ public class TarjetasView extends ScrollView {
             ProgressBar pbCardUtilization = itemView.findViewById(R.id.pbCardUtilization);
             pbCardUtilization.setProgress(usagePct);
 
+            // Proximo corte (next_cutoff_date) con icono fa-calendar
             TextView tvCutoffIcon = itemView.findViewById(R.id.tvCutoffIcon);
-            FaIcon.apply(tvCutoffIcon, "fa-solid fa-calendar-days");
+            FaIcon.apply(tvCutoffIcon, "fa-solid fa-calendar");
 
             TextView tvCardCutoffDay = itemView.findViewById(R.id.tvCardCutoffDay);
-            tvCardCutoffDay.setText("Fecha de corte: Dia " + card.cutoff_day);
+            if (card.next_cutoff_date != null && !card.next_cutoff_date.trim().isEmpty()) {
+                tvCardCutoffDay.setText("Proximo corte: " + card.next_cutoff_date + " (Dia " + card.cutoff_day + ")");
+            } else {
+                tvCardCutoffDay.setText("Fecha de corte: Dia " + card.cutoff_day);
+            }
+            UiHelper.applyTabularNums(tvCardCutoffDay);
 
+            // Fecha limite de pago (next_payment_date) con icono fa-calendar-check y alerta <= 3 dias (#D97706)
             TextView tvPaymentIcon = itemView.findViewById(R.id.tvPaymentIcon);
-            FaIcon.apply(tvPaymentIcon, "fa-solid fa-calendar-days");
+            FaIcon.apply(tvPaymentIcon, "fa-solid fa-calendar-check");
 
             TextView tvCardPaymentDay = itemView.findViewById(R.id.tvCardPaymentDay);
-            tvCardPaymentDay.setText("Fecha de pago: Dia " + card.payment_day);
+            boolean dueSoon = DateUtils.isDueSoonOrOverdue(card.next_payment_date, 3);
+            if (card.next_payment_date != null && !card.next_payment_date.trim().isEmpty()) {
+                int daysRemaining = DateUtils.daysUntilIsoDate(card.next_payment_date);
+                String suffix = "";
+                if (daysRemaining == 0) {
+                    suffix = " [Vence hoy]";
+                } else if (daysRemaining > 0 && daysRemaining <= 3) {
+                    suffix = " [Vence en " + daysRemaining + (daysRemaining == 1 ? " dia]" : " dias]");
+                } else if (daysRemaining < 0) {
+                    suffix = " [Vencido]";
+                }
+                tvCardPaymentDay.setText("Limite de pago: " + card.next_payment_date + suffix);
+            } else {
+                tvCardPaymentDay.setText("Limite de pago: Dia " + card.payment_day);
+            }
+            tvPaymentIcon.setTextColor(dueSoon ? UiHelper.COLOR_ADVERTENCIA_VENCIMIENTO : UiHelper.COLOR_PRIMARIO);
+            tvCardPaymentDay.setTextColor(dueSoon ? UiHelper.COLOR_ADVERTENCIA_VENCIMIENTO : UiHelper.COLOR_TEXTO);
+            UiHelper.applyTabularNums(tvCardPaymentDay);
+
+            // Bloque de facturacion actual: minimum_payment, full_payment, total_debt
+            TextView tvCardMinimumPayment = itemView.findViewById(R.id.tvCardMinimumPayment);
+            tvCardMinimumPayment.setText(CurrencyUtils.formatUnitsConMoneda(card.minimum_payment));
+            UiHelper.applyTabularNums(tvCardMinimumPayment);
+
+            TextView tvCardFullPayment = itemView.findViewById(R.id.tvCardFullPayment);
+            tvCardFullPayment.setText(CurrencyUtils.formatUnitsConMoneda(card.full_payment));
+            UiHelper.applyTabularNums(tvCardFullPayment);
+
+            TextView tvCardTotalDebt = itemView.findViewById(R.id.tvCardTotalDebt);
+            tvCardTotalDebt.setText(CurrencyUtils.formatUnitsConMoneda(card.total_debt));
+            tvCardTotalDebt.setTextColor(card.total_debt > 0.0 ? UiHelper.COLOR_PELIGRO : UiHelper.COLOR_EXITO);
+            UiHelper.applyTabularNums(tvCardTotalDebt);
+
+            // Botones de accion rapida de pago cuando total_debt > 0
+            LinearLayout layoutCardPaymentActions = itemView.findViewById(R.id.layoutCardPaymentActions);
+            if (card.total_debt > 0.0) {
+                layoutCardPaymentActions.setVisibility(VISIBLE);
+
+                TextView tvBtnPayMinimumIcon = itemView.findViewById(R.id.tvBtnPayMinimumIcon);
+                FaIcon.apply(tvBtnPayMinimumIcon, "fa-solid fa-money-check");
+
+                TextView tvBtnPayMinimumText = itemView.findViewById(R.id.tvBtnPayMinimumText);
+                tvBtnPayMinimumText.setText("Pagar Minimo (" + CurrencyUtils.formatUnitsConMoneda(card.minimum_payment) + ")");
+                UiHelper.applyTabularNums(tvBtnPayMinimumText);
+
+                TextView tvBtnPayFullIcon = itemView.findViewById(R.id.tvBtnPayFullIcon);
+                FaIcon.apply(tvBtnPayFullIcon, "fa-solid fa-check");
+
+                TextView tvBtnPayFullText = itemView.findViewById(R.id.tvBtnPayFullText);
+                tvBtnPayFullText.setText("Pagar Total (" + CurrencyUtils.formatUnitsConMoneda(card.full_payment) + ")");
+                UiHelper.applyTabularNums(tvBtnPayFullText);
+
+                TextView tvBtnPayOtherIcon = itemView.findViewById(R.id.tvBtnPayOtherIcon);
+                FaIcon.apply(tvBtnPayOtherIcon, "fa-solid fa-hand-holding-dollar");
+
+                LinearLayout btnPayMinimum = itemView.findViewById(R.id.btnPayMinimum);
+                btnPayMinimum.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        openPaymentDialog(card, "MINIMO");
+                    }
+                });
+
+                LinearLayout btnPayFull = itemView.findViewById(R.id.btnPayFull);
+                btnPayFull.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        openPaymentDialog(card, "TOTAL");
+                    }
+                });
+
+                LinearLayout btnPayOther = itemView.findViewById(R.id.btnPayOther);
+                btnPayOther.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        openPaymentDialog(card, "OTRO");
+                    }
+                });
+            } else {
+                layoutCardPaymentActions.setVisibility(GONE);
+            }
 
             TextView tvBtnEditCardIcon = itemView.findViewById(R.id.tvBtnEditCardIcon);
             FaIcon.apply(tvBtnEditCardIcon, "fa-solid fa-pen");
@@ -199,6 +291,16 @@ public class TarjetasView extends ScrollView {
 
             creditCardsListContainer.addView(itemView);
         }
+    }
+
+    private void openPaymentDialog(final CreditCard card, String paymentType) {
+        PaymentCardDialog.show(getContext(), card, paymentType, new PaymentCardDialog.OnPaymentRegisteredListener() {
+            @Override
+            public void onPaymentRegistered(JSONObject responseData) {
+                host.refreshCreditCardsCache();
+                loadData();
+            }
+        });
     }
 
     private void confirmarEliminarTarjeta(final CreditCard card) {

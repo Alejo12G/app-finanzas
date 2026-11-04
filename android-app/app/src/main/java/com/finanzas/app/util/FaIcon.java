@@ -55,7 +55,9 @@ public final class FaIcon {
         GLYPH_MAP.put("fa-square-plus", "\uf0fe");
         GLYPH_MAP.put("fa-square-minus", "\uf146");
         GLYPH_MAP.put("fa-receipt", "\uf543");
+        GLYPH_MAP.put("fa-calendar", "\uf133");
         GLYPH_MAP.put("fa-calendar-days", "\uf073");
+        GLYPH_MAP.put("fa-calendar-check", "\uf274");
         GLYPH_MAP.put("fa-chevron-left", "\uf053");
         GLYPH_MAP.put("fa-chevron-right", "\uf054");
         GLYPH_MAP.put("fa-bars", "\uf0c9");

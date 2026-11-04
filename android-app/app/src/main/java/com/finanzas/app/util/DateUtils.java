@@ -86,4 +86,48 @@ public final class DateUtils {
         );
         dlg.show();
     }
+
+    /**
+     * Calcula los dias calendario restantes desde hoy (medianoche local) hasta una fecha YYYY-MM-DD.
+     * Retorna Integer.MAX_VALUE si la fecha es invalida o vacia.
+     */
+    public static int daysUntilIsoDate(String isoDate) {
+        if (isoDate == null || !isoDate.trim().matches("\\d{4}-\\d{2}-\\d{2}")) {
+            return Integer.MAX_VALUE;
+        }
+        try {
+            String[] parts = isoDate.trim().split("-");
+            int year = Integer.parseInt(parts[0]);
+            int month = Integer.parseInt(parts[1]) - 1;
+            int day = Integer.parseInt(parts[2]);
+
+            Calendar today = Calendar.getInstance();
+            today.set(Calendar.HOUR_OF_DAY, 0);
+            today.set(Calendar.MINUTE, 0);
+            today.set(Calendar.SECOND, 0);
+            today.set(Calendar.MILLISECOND, 0);
+
+            Calendar target = Calendar.getInstance();
+            target.set(Calendar.YEAR, year);
+            target.set(Calendar.MONTH, month);
+            target.set(Calendar.DAY_OF_MONTH, day);
+            target.set(Calendar.HOUR_OF_DAY, 0);
+            target.set(Calendar.MINUTE, 0);
+            target.set(Calendar.SECOND, 0);
+            target.set(Calendar.MILLISECOND, 0);
+
+            long diffMillis = target.getTimeInMillis() - today.getTimeInMillis();
+            return (int) Math.round(diffMillis / (24.0 * 60.0 * 60.0 * 1000.0));
+        } catch (Exception e) {
+            return Integer.MAX_VALUE;
+        }
+    }
+
+    /**
+     * Determina si una fecha YYYY-MM-DD vence en maxDays dias o menos (incluyendo hoy o vencida).
+     */
+    public static boolean isDueSoonOrOverdue(String isoDate, int maxDays) {
+        int days = daysUntilIsoDate(isoDate);
+        return days != Integer.MAX_VALUE && days <= maxDays;
+    }
 }
