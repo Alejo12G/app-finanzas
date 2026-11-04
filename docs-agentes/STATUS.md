@@ -1,7 +1,7 @@
 # STATUS.md - Tablero de Estado Multi-Agente
 
 **Contrato vigente:** `API_CONTRACT.md` v1.0.0 | `UI_DESIGN.md` v1.0.0
-**Ultima actualizacion:** 2026-11-03 (Agente Backend: modulo de tarjetas de credito, rama `feature/tarjetas-credito`)
+**Ultima actualizacion:** 2026-11-03 (Agente Android: gestion de tarjetas de credito y compras a cuotas en `/android-app`, rama `feature/tarjetas-credito`)
 
 ## 1. Estado general
 
@@ -9,7 +9,7 @@
 |---|---|---|---|---|---|---|
 | Backend | Agente Backend | `/backend-vps` | `feature/backend-api` | COMPLETADO | 2026-11-03 | Servidor HTTP nativo Node.js (`0.0.0.0:54892`), SQLite nativo (`node:sqlite` en modo WAL con 31 categorias semilla), validacion constante `X-App-Private-Token`, integracion Gemini IA (analisis mensual y parseo de compras en texto libre) y `deploy-vps.sh` con UFW + PM2 |
 | PC | Agente PC | `/pc-app` | `feature/pc-app` | COMPLETADO | 2026-11-03 | Cliente de escritorio Node.js ultraligero (1.48 MB totales, 0 MB en `node_modules`) con ventana nativa `--app` (Edge/Chrome), Chart.js, FontAwesome 6.5.2 local + CDN y las 7 pantallas completas conectadas a `51.161.47.99:54892` |
-| Android | Agente Android | `/android-app` | `feature/sistema-temas` | COMPLETADO | 2026-11-03 | Cliente Android nativo en Java puro (cero dependencias pesadas), sistema completo de Temas (Modo Oscuro Clasico por defecto + Modo Claro) con `ThemeManager`, `SharedPreferences` y `values-night/colors.xml`, selector FontAwesome en Toolbar y Configuracion, `network_security_config` para `51.161.47.99`, fuentes FontAwesome 6.5.2 en `assets/fonts`, las 7 vistas completas, creacion rapida por texto con IA, `compilar-local.bat`/`.sh` y `.github/workflows/build-apk.yml` |
+| Android | Agente Android | `/android-app` | `feature/tarjetas-credito` | COMPLETADO | 2026-11-03 | Cliente Android nativo en Java puro (cero dependencias pesadas), sistema de Temas (Modo Oscuro Clasico por defecto + Modo Claro), gestion completa de Tarjetas de Credito (`/api/v1/credit-cards`, `CreditCard.java`, `TarjetasView`, `CreditCardFormDialog`) y registro de compras a cuotas con tarjeta (`CREDIT_CARD`) en `POST /api/v1/transactions` con opcion exenta de intereses (`is_interest_exempt`) y calculo contable en vivo (`CreditCalculator.java`) |
 
 ### Estados permitidos
 
@@ -72,6 +72,8 @@
 | Categorias | COMPLETADO |
 | Asesor IA | COMPLETADO |
 | Configuracion / estado de conexion | COMPLETADO |
+| Gestion de Tarjetas de Credito (`/api/v1/credit-cards`, `CreditCard.java`, XML nativo) | COMPLETADO |
+| Formulario de compra/gasto con `CREDIT_CARD`, cuotas, exencion de intereses (`0%`) y resumen contable en vivo (`POST /api/v1/transactions`) | COMPLETADO |
 
 ## 3. Bloqueos y preguntas al Arquitecto
 

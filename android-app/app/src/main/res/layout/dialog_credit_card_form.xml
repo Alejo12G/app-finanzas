@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/colorSurfaceCard">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_16">
+
+        <TextView
+            android:id="@+id/tvDialogCardTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/space_8"
+            android:text="Nueva tarjeta de credito"
+            android:textColor="@color/colorPrimaryAccent"
+            android:textSize="@dimen/text_subtitle"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvCardGlobalError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Nombre de la tarjeta (name) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Nombre de la tarjeta (name) *"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etCardName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="Ej. Visa Clasica, Mastercard Gold"
+            android:inputType="textCapWords"
+            android:paddingLeft="12dp"
+            android:paddingTop="10dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/colorTextPrimary"
+            android:textColorHint="@color/color_texto_deshabilitado"
+            android:textSize="@dimen/text_base" />
+
+        <TextView
+            android:id="@+id/errCardName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Banco emisor (bank) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Banco o entidad emisora (bank) *"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etCardBank"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="Ej. Bancolombia, Banco Pichincha"
+            android:inputType="textCapWords"
+            android:paddingLeft="12dp"
+            android:paddingTop="10dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/colorTextPrimary"
+            android:textColorHint="@color/color_texto_deshabilitado"
+            android:textSize="@dimen/text_base" />
+
+        <TextView
+            android:id="@+id/errCardBank"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Cupo total (credit_limit) -->
+        <TextView
+            android:id="@+id/tvLabelCreditLimit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Cupo total aprobado (credit_limit) *"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etCardCreditLimit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="0.00"
+            android:inputType="numberDecimal"
+            android:paddingLeft="12dp"
+            android:paddingTop="10dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/colorTextPrimary"
+            android:textColorHint="@color/color_texto_deshabilitado"
+            android:textSize="@dimen/text_base" />
+
+        <TextView
+            android:id="@+id/errCardCreditLimit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Tasa de interes mensual por defecto (default_interest_rate) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Tasa de interes mensual por defecto (%) *"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etCardDefaultInterestRate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="Ej. 2.15"
+            android:inputType="numberDecimal"
+            android:paddingLeft="12dp"
+            android:paddingTop="10dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/colorTextPrimary"
+            android:textColorHint="@color/color_texto_deshabilitado"
+            android:textSize="@dimen/text_base" />
+
+        <TextView
+            android:id="@+id/errCardDefaultInterestRate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Fila de dias de corte y pago (cutoff_day y payment_day) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="@dimen/space_8"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_4"
+                    android:text="Dia de corte (1-31) *"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="@dimen/text_label"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etCardCutoffDay"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:hint="Ej. 15"
+                    android:inputType="number"
+                    android:paddingLeft="12dp"
+                    android:paddingTop="10dp"
+                    android:paddingRight="12dp"
+                    android:paddingBottom="10dp"
+                    android:textColor="@color/colorTextPrimary"
+                    android:textColorHint="@color/color_texto_deshabilitado"
+                    android:textSize="@dimen/text_base" />
+
+                <TextView
+                    android:id="@+id/errCardCutoffDay"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:textColor="@color/colorExpenseRed"
+                    android:textSize="@dimen/text_label"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_4"
+                    android:text="Dia de pago (1-31) *"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="@dimen/text_label"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etCardPaymentDay"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:hint="Ej. 30"
+                    android:inputType="number"
+                    android:paddingLeft="12dp"
+                    android:paddingTop="10dp"
+                    android:paddingRight="12dp"
+                    android:paddingBottom="10dp"
+                    android:textColor="@color/colorTextPrimary"
+                    android:textColorHint="@color/color_texto_deshabilitado"
+                    android:textSize="@dimen/text_base" />
+
+                <TextView
+                    android:id="@+id/errCardPaymentDay"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:textColor="@color/colorExpenseRed"
+                    android:textSize="@dimen/text_label"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Botones inferiores -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_16"
+            android:gravity="end"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/btnCancelCard"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginRight="@dimen/space_8"
+                android:background="@drawable/bg_button_secondary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp">
+
+                <TextView
+                    android:id="@+id/tvBtnCancelCardIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="@dimen/space_8"
+                    android:contentDescription="@null"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="@dimen/text_base" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cancelar"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="@dimen/text_base"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btnSaveCard"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_height"
+                android:background="@drawable/bg_button_primary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp">
+
+                <TextView
+                    android:id="@+id/tvBtnSaveCardIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="@dimen/space_8"
+                    android:contentDescription="@null"
+                    android:textColor="@color/color_texto_invertido"
+                    android:textSize="@dimen/text_base" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Guardar tarjeta"
+                    android:textColor="@color/color_texto_invertido"
+                    android:textSize="@dimen/text_base"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

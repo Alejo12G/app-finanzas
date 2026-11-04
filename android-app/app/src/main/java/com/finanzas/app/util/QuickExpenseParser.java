@@ -70,7 +70,7 @@ public final class QuickExpenseParser {
 
         // 4. Detectar Metodo de pago
         if (lower.contains("credito") || lower.contains("tc") || lower.contains("visa") || lower.contains("mastercard")) {
-            result.metodoPago = "CREDITO";
+            result.metodoPago = "CREDIT_CARD";
         } else if (lower.contains("debito") || lower.contains("td")) {
             result.metodoPago = "DEBITO";
         } else if (lower.contains("transferencia") || lower.contains("banco") || lower.contains("deposito")) {

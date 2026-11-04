@@ -18,6 +18,7 @@ import com.finanzas.app.api.ApiCallback;
 import com.finanzas.app.api.ApiClient;
 import com.finanzas.app.api.ApiError;
 import com.finanzas.app.model.Categoria;
+import com.finanzas.app.model.CreditCard;
 import com.finanzas.app.model.HealthInfo;
 import com.finanzas.app.model.PaginacionMeta;
 import com.finanzas.app.model.Transaccion;
@@ -27,6 +28,7 @@ import com.finanzas.app.ui.ComprasView;
 import com.finanzas.app.ui.ConfiguracionView;
 import com.finanzas.app.ui.DashboardView;
 import com.finanzas.app.ui.PresupuestosView;
+import com.finanzas.app.ui.TarjetasView;
 import com.finanzas.app.ui.TransaccionesView;
 import com.finanzas.app.ui.dialogs.GastoRapidoIaDialog;
 import com.finanzas.app.ui.dialogs.TransaccionFormDialog;
@@ -48,10 +50,11 @@ public class MainActivity extends Activity {
     private static final int TAB_DASHBOARD = 0;
     private static final int TAB_TRANSACCIONES = 1;
     private static final int TAB_COMPRAS = 2;
-    private static final int TAB_PRESUPUESTOS = 3;
-    private static final int TAB_CATEGORIAS = 4;
-    private static final int TAB_ASESOR_IA = 5;
-    private static final int TAB_CONFIGURACION = 6;
+    private static final int TAB_TARJETAS = 3;
+    private static final int TAB_PRESUPUESTOS = 4;
+    private static final int TAB_CATEGORIAS = 5;
+    private static final int TAB_ASESOR_IA = 6;
+    private static final int TAB_CONFIGURACION = 7;
 
     private static final String STATE_ACTIVE_TAB = "state_active_tab";
     private static int lastActiveTab = TAB_DASHBOARD;
@@ -70,6 +73,7 @@ public class MainActivity extends Activity {
     private DashboardView dashboardView;
     private TransaccionesView transaccionesView;
     private ComprasView comprasView;
+    private TarjetasView tarjetasView;
     private PresupuestosView presupuestosView;
     private CategoriasView categoriasView;
     private AsesorIaView asesorIaView;
@@ -78,11 +82,13 @@ public class MainActivity extends Activity {
     private int activeTab = TAB_DASHBOARD;
     private final List<LinearLayout> navTabViews = new ArrayList<>();
     private List<Categoria> cachedCategorias = new ArrayList<>();
+    private List<CreditCard> cachedCreditCards = new ArrayList<>();
 
     private static final String[][] NAV_ITEMS = {
             {"Panel", "fa-solid fa-chart-pie"},
             {"Transacciones", "fa-solid fa-money-bill-transfer"},
             {"Compras", "fa-solid fa-cart-shopping"},
+            {"Tarjetas", "fa-solid fa-credit-card"},
             {"Presupuestos", "fa-solid fa-wallet"},
             {"Categorias", "fa-solid fa-tags"},
             {"Asesor IA", "fa-solid fa-robot"},
@@ -151,6 +157,7 @@ public class MainActivity extends Activity {
             public void onClick(View v) {
                 bannerGlobalStatus.setVisibility(View.GONE);
                 refreshCategoriasCache();
+                refreshCreditCardsCache();
                 reloadActiveScreen();
             }
         });
@@ -160,6 +167,7 @@ public class MainActivity extends Activity {
             public void onClick(View v) {
                 bannerGlobalStatus.setVisibility(View.GONE);
                 refreshCategoriasCache();
+                refreshCreditCardsCache();
                 reloadActiveScreen();
             }
         });
@@ -191,6 +199,7 @@ public class MainActivity extends Activity {
         dashboardView = new DashboardView(this, this);
         transaccionesView = new TransaccionesView(this, this);
         comprasView = new ComprasView(this, this);
+        tarjetasView = new TarjetasView(this, this);
         presupuestosView = new PresupuestosView(this, this);
         categoriasView = new CategoriasView(this, this);
         asesorIaView = new AsesorIaView(this, this);
@@ -273,6 +282,10 @@ public class MainActivity extends Activity {
                 contentContainer.addView(comprasView);
                 comprasView.loadData();
                 break;
+            case TAB_TARJETAS:
+                contentContainer.addView(tarjetasView);
+                tarjetasView.loadData();
+                break;
             case TAB_PRESUPUESTOS:
                 contentContainer.addView(presupuestosView);
                 presupuestosView.loadData();
@@ -311,6 +324,7 @@ public class MainActivity extends Activity {
             }
         });
         refreshCategoriasCache();
+        refreshCreditCardsCache();
     }
 
     public void refreshCategoriasCache() {
@@ -329,8 +343,27 @@ public class MainActivity extends Activity {
         });
     }
 
+    public void refreshCreditCardsCache() {
+        ApiClient.getInstance().getCreditCards(new ApiCallback<List<CreditCard>>() {
+            @Override
+            public void onSuccess(List<CreditCard> data, PaginacionMeta meta) {
+                if (data != null) {
+                    cachedCreditCards = data;
+                }
+            }
+
+            @Override
+            public void onError(ApiError error) {
+            }
+        });
+    }
+
     public List<Categoria> getCachedCategorias() {
         return cachedCategorias;
+    }
+
+    public List<CreditCard> getCachedCreditCards() {
+        return cachedCreditCards;
     }
 
     public void updateCurrencySubtitle() {

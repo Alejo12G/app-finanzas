@@ -7,6 +7,7 @@ import com.finanzas.app.model.AnalisisIA;
 import com.finanzas.app.model.ArticuloCompra;
 import com.finanzas.app.model.Categoria;
 import com.finanzas.app.model.Compra;
+import com.finanzas.app.model.CreditCard;
 import com.finanzas.app.model.DashboardData;
 import com.finanzas.app.model.HealthInfo;
 import com.finanzas.app.model.PaginacionMeta;
@@ -283,7 +284,7 @@ public class ApiClient {
         }, callback);
     }
 
-    // 7.3.3 POST /transacciones
+    // 7.3.3 POST /transactions (y alias /transacciones)
     public void crearTransaccion(
             String tipo,
             String naturaleza,
@@ -295,9 +296,37 @@ public class ApiClient {
             String comercio,
             String notas,
             ApiCallback<Transaccion> callback) {
+        crearTransaccion(
+                tipo, naturaleza, montoCentavos, fecha, descripcion, categoriaId,
+                metodoPago, comercio, notas, null, null, null, null, null, null, null, callback
+        );
+    }
+
+    public void crearTransaccion(
+            String tipo,
+            String naturaleza,
+            long montoCentavos,
+            String fecha,
+            String descripcion,
+            int categoriaId,
+            String metodoPago,
+            String comercio,
+            String notas,
+            Integer cardId,
+            Integer installments,
+            Boolean isInterestExempt,
+            Double appliedInterestRate,
+            Double monthlyInstallmentAmount,
+            Double totalInterestAmount,
+            Double totalWithInterest,
+            ApiCallback<Transaccion> callback) {
         try {
-            JSONObject body = buildTransaccionPayload(tipo, naturaleza, montoCentavos, fecha, descripcion, categoriaId, metodoPago, comercio, notas);
-            executeRequest("POST", "/transacciones", body, AppConfig.TIMEOUT_DEFAULT_MS, new DataParser<Transaccion>() {
+            JSONObject body = buildTransaccionPayload(
+                    tipo, naturaleza, montoCentavos, fecha, descripcion, categoriaId,
+                    metodoPago, comercio, notas, cardId, installments, isInterestExempt,
+                    appliedInterestRate, monthlyInstallmentAmount, totalInterestAmount, totalWithInterest
+            );
+            executeRequest("POST", "/transactions", body, AppConfig.TIMEOUT_DEFAULT_MS, new DataParser<Transaccion>() {
                 @Override
                 public Transaccion parse(Object rawData) {
                     return Transaccion.fromJson((JSONObject) rawData);
@@ -308,7 +337,7 @@ public class ApiClient {
         }
     }
 
-    // 7.3.4 PUT /transacciones/{id}
+    // 7.3.4 PUT /transactions/{id}
     public void actualizarTransaccion(
             int id,
             String tipo,
@@ -321,9 +350,38 @@ public class ApiClient {
             String comercio,
             String notas,
             ApiCallback<Transaccion> callback) {
+        actualizarTransaccion(
+                id, tipo, naturaleza, montoCentavos, fecha, descripcion, categoriaId,
+                metodoPago, comercio, notas, null, null, null, null, null, null, null, callback
+        );
+    }
+
+    public void actualizarTransaccion(
+            int id,
+            String tipo,
+            String naturaleza,
+            long montoCentavos,
+            String fecha,
+            String descripcion,
+            int categoriaId,
+            String metodoPago,
+            String comercio,
+            String notas,
+            Integer cardId,
+            Integer installments,
+            Boolean isInterestExempt,
+            Double appliedInterestRate,
+            Double monthlyInstallmentAmount,
+            Double totalInterestAmount,
+            Double totalWithInterest,
+            ApiCallback<Transaccion> callback) {
         try {
-            JSONObject body = buildTransaccionPayload(tipo, naturaleza, montoCentavos, fecha, descripcion, categoriaId, metodoPago, comercio, notas);
-            executeRequest("PUT", "/transacciones/" + id, body, AppConfig.TIMEOUT_DEFAULT_MS, new DataParser<Transaccion>() {
+            JSONObject body = buildTransaccionPayload(
+                    tipo, naturaleza, montoCentavos, fecha, descripcion, categoriaId,
+                    metodoPago, comercio, notas, cardId, installments, isInterestExempt,
+                    appliedInterestRate, monthlyInstallmentAmount, totalInterestAmount, totalWithInterest
+            );
+            executeRequest("PUT", "/transactions/" + id, body, AppConfig.TIMEOUT_DEFAULT_MS, new DataParser<Transaccion>() {
                 @Override
                 public Transaccion parse(Object rawData) {
                     return Transaccion.fromJson((JSONObject) rawData);
@@ -343,7 +401,14 @@ public class ApiClient {
             int categoriaId,
             String metodoPago,
             String comercio,
-            String notas) throws Exception {
+            String notas,
+            Integer cardId,
+            Integer installments,
+            Boolean isInterestExempt,
+            Double appliedInterestRate,
+            Double monthlyInstallmentAmount,
+            Double totalInterestAmount,
+            Double totalWithInterest) throws Exception {
         JSONObject body = new JSONObject();
         body.put("tipo", tipo);
         body.put("naturaleza", naturaleza);
@@ -351,7 +416,11 @@ public class ApiClient {
         body.put("fecha", fecha != null ? fecha.trim() : "");
         body.put("descripcion", descripcion != null ? descripcion.trim() : "");
         body.put("categoria_id", categoriaId);
-        body.put("metodo_pago", metodoPago);
+
+        boolean isCreditCard = "CREDIT_CARD".equalsIgnoreCase(metodoPago) || "CREDITO".equalsIgnoreCase(metodoPago);
+        body.put("metodo_pago", isCreditCard ? "CREDIT_CARD" : metodoPago);
+        body.put("payment_method", isCreditCard ? "CREDIT_CARD" : metodoPago);
+
         if (comercio == null || comercio.trim().isEmpty()) {
             body.put("comercio", JSONObject.NULL);
         } else {
@@ -362,7 +431,88 @@ public class ApiClient {
         } else {
             body.put("notas", notas.trim());
         }
+
+        if (isCreditCard && cardId != null && cardId > 0) {
+            body.put("card_id", cardId);
+            body.put("installments", installments != null ? installments : 1);
+            body.put("is_interest_exempt", isInterestExempt != null && isInterestExempt);
+            body.put("applied_interest_rate", appliedInterestRate != null ? appliedInterestRate : 0.0);
+            body.put("monthly_installment_amount", monthlyInstallmentAmount != null ? monthlyInstallmentAmount : 0.0);
+            body.put("total_interest_amount", totalInterestAmount != null ? totalInterestAmount : 0.0);
+            body.put("total_with_interest", totalWithInterest != null ? totalWithInterest : 0.0);
+        } else {
+            body.put("card_id", JSONObject.NULL);
+            body.put("installments", JSONObject.NULL);
+            body.put("is_interest_exempt", JSONObject.NULL);
+            body.put("applied_interest_rate", JSONObject.NULL);
+            body.put("monthly_installment_amount", JSONObject.NULL);
+            body.put("total_interest_amount", JSONObject.NULL);
+            body.put("total_with_interest", JSONObject.NULL);
+        }
         return body;
+    }
+
+    // 11.2 GET /credit-cards
+    public void getCreditCards(ApiCallback<List<CreditCard>> callback) {
+        executeRequest("GET", "/credit-cards", null, AppConfig.TIMEOUT_DEFAULT_MS, new DataParser<List<CreditCard>>() {
+            @Override
+            public List<CreditCard> parse(Object rawData) {
+                return CreditCard.fromJsonArray((JSONArray) rawData);
+            }
+        }, callback);
+    }
+
+    // 11.2 GET /credit-cards/{id}
+    public void getCreditCard(int id, ApiCallback<CreditCard> callback) {
+        executeRequest("GET", "/credit-cards/" + id, null, AppConfig.TIMEOUT_DEFAULT_MS, new DataParser<CreditCard>() {
+            @Override
+            public CreditCard parse(Object rawData) {
+                return CreditCard.fromJson((JSONObject) rawData);
+            }
+        }, callback);
+    }
+
+    // 11.2 POST /credit-cards
+    public void crearCreditCard(CreditCard card, ApiCallback<CreditCard> callback) {
+        try {
+            JSONObject body = card.toJson();
+            executeRequest("POST", "/credit-cards", body, AppConfig.TIMEOUT_DEFAULT_MS, new DataParser<CreditCard>() {
+                @Override
+                public CreditCard parse(Object rawData) {
+                    return CreditCard.fromJson((JSONObject) rawData);
+                }
+            }, callback);
+        } catch (Exception e) {
+            postError(callback, new ApiError(400, "JSON_INVALIDO", "Datos de tarjeta invalidos.", false));
+        }
+    }
+
+    // 11.2 PUT /credit-cards/{id}
+    public void actualizarCreditCard(int id, CreditCard card, ApiCallback<CreditCard> callback) {
+        try {
+            JSONObject body = card.toJson();
+            executeRequest("PUT", "/credit-cards/" + id, body, AppConfig.TIMEOUT_DEFAULT_MS, new DataParser<CreditCard>() {
+                @Override
+                public CreditCard parse(Object rawData) {
+                    return CreditCard.fromJson((JSONObject) rawData);
+                }
+            }, callback);
+        } catch (Exception e) {
+            postError(callback, new ApiError(400, "JSON_INVALIDO", "Datos de tarjeta invalidos.", false));
+        }
+    }
+
+    // 11.2 DELETE /credit-cards/{id}
+    public void eliminarCreditCard(int id, ApiCallback<Boolean> callback) {
+        executeRequest("DELETE", "/credit-cards/" + id, null, AppConfig.TIMEOUT_DEFAULT_MS, new DataParser<Boolean>() {
+            @Override
+            public Boolean parse(Object rawData) {
+                if (rawData instanceof JSONObject) {
+                    return ((JSONObject) rawData).optBoolean("eliminado", true);
+                }
+                return true;
+            }
+        }, callback);
     }
 
     // 7.3.5 DELETE /transacciones/{id}

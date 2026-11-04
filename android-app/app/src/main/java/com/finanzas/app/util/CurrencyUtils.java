@@ -7,8 +7,8 @@ import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
 /**
- * Formateador y conversor monetario en centavos enteros (API_CONTRACT.md Seccion 2 y UI_DESIGN.md 2.3).
- * Prohibido usar float/double para representar dinero.
+ * Formateador y conversor monetario en centavos enteros (API_CONTRACT.md Seccion 2 y UI_DESIGN.md 2.3)
+ * y unidades monetarias para el modulo de tarjetas de credito (API_CONTRACT.md Seccion 11).
  */
 public final class CurrencyUtils {
 
@@ -111,7 +111,57 @@ public final class CurrencyUtils {
         }
     }
 
+    /**
+     * Convierte unidades de moneda (double) a centavos enteros (long).
+     */
+    public static long unitsToCentavos(double units) {
+        if (Double.isNaN(units) || Double.isInfinite(units)) {
+            return 0L;
+        }
+        return BigDecimal.valueOf(units)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(0, RoundingMode.HALF_UP)
+                .longValue();
+    }
+
+    /**
+     * Convierte centavos enteros (long) a unidades de moneda (double con 2 decimales).
+     */
+    public static double centavosToUnits(long centavos) {
+        return BigDecimal.valueOf(centavos)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
+                .doubleValue();
+    }
+
+    /**
+     * Formatea unidades de moneda con codigo ISO activo (ej. "COP 94,559.60").
+     */
+    public static String formatUnitsConMoneda(double units) {
+        return formatConMoneda(unitsToCentavos(units));
+    }
+
+    /**
+     * Formatea unidades de moneda de forma neutra (ej. "94,559.60").
+     */
+    public static String formatUnitsNeutro(double units) {
+        return formatNeutro(unitsToCentavos(units));
+    }
+
+    /**
+     * Convierte unidades de moneda a texto editable sin separador de miles (ej. "5000.00").
+     */
+    public static String unitsToInputString(double units) {
+        return centavosToInputString(unitsToCentavos(units));
+    }
+
     public static String formatPorcentaje(double pct) {
         return String.format(Locale.US, "%.2f %%", pct);
+    }
+
+    public static String formatTasaInput(double rate) {
+        if (rate == (long) rate) {
+            return String.format(Locale.US, "%.1f", rate);
+        }
+        return BigDecimal.valueOf(rate).stripTrailingZeros().toPlainString();
     }
 }

@@ -23,6 +23,7 @@ import com.finanzas.app.api.ApiClient;
 import com.finanzas.app.api.ApiError;
 import com.finanzas.app.model.Categoria;
 import com.finanzas.app.model.Compra;
+import com.finanzas.app.model.CreditCard;
 import com.finanzas.app.model.PaginacionMeta;
 import com.finanzas.app.model.Transaccion;
 import com.finanzas.app.ui.dialogs.CompraDetalleDialog;
@@ -66,7 +67,7 @@ public class TransaccionesView extends ScrollView {
 
     private static final String[] FILTRO_TIPOS = {"TODOS", "GASTO", "INGRESO"};
     private static final String[] FILTRO_NATURALEZA = {"TODAS", "VARIABLE", "FIJO"};
-    private static final String[] FILTRO_METODOS = {"TODOS", "EFECTIVO", "DEBITO", "CREDITO", "TRANSFERENCIA", "OTRO"};
+    private static final String[] FILTRO_METODOS = {"TODOS", "EFECTIVO", "DEBITO", "CREDIT_CARD", "TRANSFERENCIA", "OTRO"};
 
     public TransaccionesView(Context context, MainActivity host) {
         super(context);
@@ -479,6 +480,46 @@ public class TransaccionesView extends ScrollView {
             topRow.addView(tvMonto);
 
             card.addView(topRow);
+
+            if (t.isCreditCardTransaction() && t.installments != null && t.installments >= 1) {
+                String cardLabel = "Tarjeta #" + (t.cardId != null ? t.cardId : "");
+                List<CreditCard> cards = host.getCachedCreditCards();
+                if (cards != null && t.cardId != null) {
+                    for (CreditCard cc : cards) {
+                        if (cc.id == t.cardId) {
+                            cardLabel = cc.name + " (" + cc.bank + ")";
+                            break;
+                        }
+                    }
+                }
+                boolean exenta = Boolean.TRUE.equals(t.isInterestExempt)
+                        || (t.appliedInterestRate != null && t.appliedInterestRate <= 0.0);
+                StringBuilder finSb = new StringBuilder();
+                finSb.append(cardLabel)
+                        .append(" | ")
+                        .append(t.installments)
+                        .append(t.installments == 1 ? " cuota" : " cuotas")
+                        .append(" | ")
+                        .append(exenta ? "0% Exenta" : (t.appliedInterestRate + "% M.V."));
+                if (t.monthlyInstallmentAmount != null) {
+                    finSb.append(" | Cuota: ").append(CurrencyUtils.formatUnitsConMoneda(t.monthlyInstallmentAmount));
+                }
+                if (t.totalWithInterest != null && !exenta) {
+                    finSb.append(" | Total c/int: ").append(CurrencyUtils.formatUnitsConMoneda(t.totalWithInterest));
+                }
+                TextView tvFinInfo = new TextView(getContext());
+                tvFinInfo.setText(finSb.toString());
+                tvFinInfo.setTextColor(UiHelper.COLOR_PRIMARIO);
+                tvFinInfo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+                tvFinInfo.setTypeface(Typeface.DEFAULT_BOLD);
+                UiHelper.applyTabularNums(tvFinInfo);
+                LinearLayout.LayoutParams finLp = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                );
+                finLp.topMargin = UiHelper.dp(getContext(), 6);
+                tvFinInfo.setLayoutParams(finLp);
+                card.addView(tvFinInfo);
+            }
 
             // Fila inferior de acciones (Metodo de pago + Ver/Editar/Eliminar)
             LinearLayout actRow = new LinearLayout(getContext());

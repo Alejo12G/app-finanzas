@@ -2,38 +2,46 @@ package com.finanzas.app.ui.dialogs;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.text.InputType;
-import android.util.TypedValue;
-import android.view.Gravity;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.finanzas.app.MainActivity;
 import com.finanzas.app.R;
 import com.finanzas.app.api.ApiCallback;
 import com.finanzas.app.api.ApiClient;
 import com.finanzas.app.api.ApiError;
 import com.finanzas.app.model.Categoria;
+import com.finanzas.app.model.CreditCard;
 import com.finanzas.app.model.PaginacionMeta;
 import com.finanzas.app.model.Transaccion;
+import com.finanzas.app.util.CreditCalculator;
 import com.finanzas.app.util.CurrencyUtils;
 import com.finanzas.app.util.DateUtils;
+import com.finanzas.app.util.FaIcon;
 import com.finanzas.app.util.QuickExpenseParser;
 import com.finanzas.app.util.UiHelper;
 import com.finanzas.app.util.ValidationUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
- * Dialogo de alta y edicion de transacciones (POST /transacciones y PUT /transacciones/{id}).
+ * Dialogo de alta y edicion de transacciones (POST /api/v1/transactions y PUT /api/v1/transactions/{id}).
+ * Incluye seccion dinamica de financiacion con tarjeta de credito (CREDIT_CARD),
+ * autocompletado de tasa por tarjeta, opcion de compra exenta de intereses (0%)
+ * y calculo en vivo de cuota mensual, intereses totales y costo total.
  */
 public class TransaccionFormDialog {
 
@@ -43,7 +51,11 @@ public class TransaccionFormDialog {
 
     private static final String[] TIPOS = {"GASTO", "INGRESO"};
     private static final String[] NATURALEZAS = {"VARIABLE", "FIJO"};
-    private static final String[] METODOS_PAGO = {"EFECTIVO", "DEBITO", "CREDITO", "TRANSFERENCIA", "OTRO"};
+    private static final String[] METODOS_PAGO = {"EFECTIVO", "DEBITO", "CREDIT_CARD", "TRANSFERENCIA", "OTRO"};
+
+    private static boolean isCreditCardMethod(String method) {
+        return "CREDIT_CARD".equalsIgnoreCase(method) || "CREDITO".equalsIgnoreCase(method);
+    }
 
     public static void show(
             final Context context,
@@ -53,107 +65,236 @@ public class TransaccionFormDialog {
             final OnSavedListener listener) {
 
         final boolean esEdicion = (existente != null && existente.id > 0);
-        final AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
 
-        ScrollView scroll = new ScrollView(context);
-        LinearLayout root = new LinearLayout(context);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(UiHelper.COLOR_SUPERFICIE);
-        int pad = UiHelper.dp(context, 16);
-        root.setPadding(pad, pad, pad, pad);
-        scroll.addView(root);
+        View rootView = LayoutInflater.from(context).inflate(R.layout.dialog_transaction_form, null, false);
 
-        TextView titleTv = UiHelper.createSectionTitle(
-                context,
-                esEdicion ? "Editar transaccion" : (prefill != null ? "Confirmar transaccion rapida IA" : "Nueva transaccion")
-        );
-        root.addView(titleTv);
+        TextView titleTv = rootView.findViewById(R.id.tvTxDialogTitle);
+        titleTv.setText(esEdicion ? "Editar transaccion" : (prefill != null ? "Confirmar transaccion rapida IA" : "Nueva transaccion"));
 
-        final TextView globalErrorTv = UiHelper.createFieldErrorText(context);
-        root.addView(globalErrorTv);
+        final TextView globalErrorTv = rootView.findViewById(R.id.tvTxGlobalError);
 
-        // Tipo (GASTO / INGRESO)
-        root.addView(UiHelper.createLabel(context, "Tipo de movimiento *"));
-        final Spinner spTipo = new Spinner(context);
+        final Spinner spTipo = rootView.findViewById(R.id.spTxTipo);
         spTipo.setAdapter(new ArrayAdapter<>(context, android.R.layout.simple_spinner_dropdown_item, TIPOS));
-        root.addView(spTipo);
 
-        // Naturaleza (VARIABLE / FIJO)
-        root.addView(UiHelper.createLabel(context, "Naturaleza *"));
-        final Spinner spNaturaleza = new Spinner(context);
+        final Spinner spNaturaleza = rootView.findViewById(R.id.spTxNaturaleza);
         spNaturaleza.setAdapter(new ArrayAdapter<>(context, android.R.layout.simple_spinner_dropdown_item, NATURALEZAS));
-        root.addView(spNaturaleza);
 
-        // Monto
-        root.addView(UiHelper.createLabel(context, "Monto (" + CurrencyUtils.getActiveCurrency() + ") *"));
-        final EditText etMonto = UiHelper.createInput(context, "0.00");
-        etMonto.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        final TextView errMonto = UiHelper.createFieldErrorText(context);
-        root.addView(etMonto);
-        root.addView(errMonto);
+        TextView tvLabelMonto = rootView.findViewById(R.id.tvLabelTxMonto);
+        tvLabelMonto.setText("Monto (" + CurrencyUtils.getActiveCurrency() + ") *");
 
-        // Fecha
-        root.addView(UiHelper.createLabel(context, "Fecha (YYYY-MM-DD) *"));
-        LinearLayout fechaRow = new LinearLayout(context);
-        fechaRow.setOrientation(LinearLayout.HORIZONTAL);
-        fechaRow.setGravity(Gravity.CENTER_VERTICAL);
-        final EditText etFecha = UiHelper.createInput(context, DateUtils.getTodayIso());
-        LinearLayout.LayoutParams fechaLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        fechaLp.rightMargin = UiHelper.dp(context, 8);
-        etFecha.setLayoutParams(fechaLp);
-        fechaRow.addView(etFecha);
+        final EditText etMonto = rootView.findViewById(R.id.etTxMonto);
+        final TextView errMonto = rootView.findViewById(R.id.errTxMonto);
 
-        LinearLayout btnPickDate = UiHelper.createActionButton(
-                context,
-                "fa-solid fa-calendar-days",
-                "Calendario",
-                R.drawable.bg_button_secondary,
-                UiHelper.COLOR_SECUNDARIO
-        );
+        final EditText etFecha = rootView.findViewById(R.id.etTxFecha);
+        final TextView errFecha = rootView.findViewById(R.id.errTxFecha);
+        LinearLayout btnPickDate = rootView.findViewById(R.id.btnTxPickDate);
+        TextView tvBtnPickDateIcon = rootView.findViewById(R.id.tvBtnTxPickDateIcon);
+        FaIcon.apply(tvBtnPickDateIcon, "fa-solid fa-calendar-days");
         btnPickDate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 DateUtils.showDatePicker(context, etFecha);
             }
         });
-        fechaRow.addView(btnPickDate);
-        final TextView errFecha = UiHelper.createFieldErrorText(context);
-        root.addView(fechaRow);
-        root.addView(errFecha);
 
-        // Descripcion
-        root.addView(UiHelper.createLabel(context, "Descripcion *"));
-        final EditText etDescripcion = UiHelper.createInput(context, "Ej. Pago de servicio o compra");
-        final TextView errDescripcion = UiHelper.createFieldErrorText(context);
-        root.addView(etDescripcion);
-        root.addView(errDescripcion);
+        final EditText etDescripcion = rootView.findViewById(R.id.etTxDescripcion);
+        final TextView errDescripcion = rootView.findViewById(R.id.errTxDescripcion);
 
-        // Categoria
-        root.addView(UiHelper.createLabel(context, "Categoria *"));
-        final Spinner spCategoria = new Spinner(context);
-        final TextView errCategoria = UiHelper.createFieldErrorText(context);
-        root.addView(spCategoria);
-        root.addView(errCategoria);
+        final Spinner spCategoria = rootView.findViewById(R.id.spTxCategoria);
+        final TextView errCategoria = rootView.findViewById(R.id.errTxCategoria);
 
-        // Metodo de pago
-        root.addView(UiHelper.createLabel(context, "Metodo de pago *"));
-        final Spinner spMetodo = new Spinner(context);
+        final Spinner spMetodo = rootView.findViewById(R.id.spTxMetodoPago);
         spMetodo.setAdapter(new ArrayAdapter<>(context, android.R.layout.simple_spinner_dropdown_item, METODOS_PAGO));
-        root.addView(spMetodo);
 
-        // Comercio
-        root.addView(UiHelper.createLabel(context, "Comercio / Entidad (opcional)"));
-        final EditText etComercio = UiHelper.createInput(context, "Ej. Supermaxi, Empresa Electrica");
-        final TextView errComercio = UiHelper.createFieldErrorText(context);
-        root.addView(etComercio);
-        root.addView(errComercio);
+        // Seccion de financiacion con tarjeta de credito
+        final LinearLayout layoutCreditCardFinancing = rootView.findViewById(R.id.layoutCreditCardFinancing);
+        TextView tvFinancingHeaderIcon = rootView.findViewById(R.id.tvFinancingHeaderIcon);
+        FaIcon.apply(tvFinancingHeaderIcon, "fa-solid fa-credit-card");
 
-        // Notas
-        root.addView(UiHelper.createLabel(context, "Notas adicionales (opcional)"));
-        final EditText etNotas = UiHelper.createInput(context, "Observaciones");
-        final TextView errNotas = UiHelper.createFieldErrorText(context);
-        root.addView(etNotas);
-        root.addView(errNotas);
+        final Spinner spCreditCard = rootView.findViewById(R.id.spCreditCard);
+        final TextView tvSelectedCardAvailableInfo = rootView.findViewById(R.id.tvSelectedCardAvailableInfo);
+        final TextView errCreditCard = rootView.findViewById(R.id.errCreditCard);
+
+        final EditText etInstallments = rootView.findViewById(R.id.etInstallments);
+        final TextView errInstallments = rootView.findViewById(R.id.errInstallments);
+
+        final CheckBox cbInterestExempt = rootView.findViewById(R.id.cbInterestExempt);
+
+        final EditText etAppliedInterestRate = rootView.findViewById(R.id.etAppliedInterestRate);
+        final TextView errAppliedInterestRate = rootView.findViewById(R.id.errAppliedInterestRate);
+
+        final TextView tvSummaryMonthlyInstallment = rootView.findViewById(R.id.tvSummaryMonthlyInstallment);
+        final TextView tvSummaryTotalInterest = rootView.findViewById(R.id.tvSummaryTotalInterest);
+        final TextView tvSummaryTotalWithInterest = rootView.findViewById(R.id.tvSummaryTotalWithInterest);
+        UiHelper.applyTabularNums(tvSummaryMonthlyInstallment);
+        UiHelper.applyTabularNums(tvSummaryTotalInterest);
+        UiHelper.applyTabularNums(tvSummaryTotalWithInterest);
+
+        final EditText etComercio = rootView.findViewById(R.id.etTxComercio);
+        final TextView errComercio = rootView.findViewById(R.id.errTxComercio);
+
+        final EditText etNotas = rootView.findViewById(R.id.etTxNotas);
+        final TextView errNotas = rootView.findViewById(R.id.errTxNotas);
+
+        TextView tvBtnCancelarIcon = rootView.findViewById(R.id.tvBtnTxCancelarIcon);
+        FaIcon.apply(tvBtnCancelarIcon, "fa-solid fa-xmark");
+
+        TextView tvBtnGuardarIcon = rootView.findViewById(R.id.tvBtnTxGuardarIcon);
+        FaIcon.apply(tvBtnGuardarIcon, "fa-solid fa-floppy-disk");
+
+        LinearLayout btnCancelar = rootView.findViewById(R.id.btnTxCancelar);
+        final LinearLayout btnGuardar = rootView.findViewById(R.id.btnTxGuardar);
+
+        final List<CreditCard> availableCards = new ArrayList<>();
+        if (context instanceof MainActivity) {
+            List<CreditCard> cached = ((MainActivity) context).getCachedCreditCards();
+            if (cached != null) {
+                availableCards.addAll(cached);
+            }
+        }
+
+        // Bandera para preservar la tasa guardada al abrir la edicion inicial
+        final boolean[] preserveInitialEditRate = {
+                esEdicion && existente.isCreditCardTransaction() && existente.appliedInterestRate != null
+        };
+
+        // Calculo en vivo de cuota mensual, total de intereses y costo total
+        final Runnable recalcularResumenFinanciacion = new Runnable() {
+            @Override
+            public void run() {
+                long montoCentavos = CurrencyUtils.parseMontoToCentavos(etMonto.getText().toString());
+                if (montoCentavos < 0L) {
+                    montoCentavos = 0L;
+                }
+
+                int cuotas = 1;
+                try {
+                    cuotas = Integer.parseInt(etInstallments.getText().toString().trim());
+                } catch (Exception ignored) {
+                }
+                if (cuotas < 1) {
+                    cuotas = 1;
+                } else if (cuotas > CreditCalculator.MAX_INSTALLMENTS) {
+                    cuotas = CreditCalculator.MAX_INSTALLMENTS;
+                }
+
+                boolean exempt = cbInterestExempt.isChecked();
+                double rate = 0.0;
+                if (!exempt) {
+                    try {
+                        rate = Double.parseDouble(etAppliedInterestRate.getText().toString().trim().replace(",", "."));
+                    } catch (Exception ignored) {
+                    }
+                    if (Double.isNaN(rate) || Double.isInfinite(rate) || rate < 0.0) {
+                        rate = 0.0;
+                    }
+                }
+
+                CreditCalculator.SimulationResult sim = CreditCalculator.simulate(montoCentavos, cuotas, rate, exempt);
+                tvSummaryMonthlyInstallment.setText(CurrencyUtils.formatConMoneda(sim.monthlyInstallmentCentavos));
+                tvSummaryTotalInterest.setText(CurrencyUtils.formatConMoneda(sim.totalInterestCentavos));
+                tvSummaryTotalWithInterest.setText(CurrencyUtils.formatConMoneda(sim.totalWithInterestCentavos));
+            }
+        };
+
+        final Runnable populateCardsSpinner = new Runnable() {
+            @Override
+            public void run() {
+                ArrayAdapter<CreditCard> cardAdapter = new ArrayAdapter<>(
+                        context,
+                        android.R.layout.simple_spinner_dropdown_item,
+                        availableCards
+                );
+                spCreditCard.setAdapter(cardAdapter);
+
+                if (availableCards.isEmpty()) {
+                    tvSelectedCardAvailableInfo.setText("No hay tarjetas registradas. Cree una en la seccion Tarjetas.");
+                    return;
+                }
+
+                int selectedIdx = 0;
+                if (esEdicion && existente.cardId != null) {
+                    for (int i = 0; i < availableCards.size(); i++) {
+                        if (availableCards.get(i).id == existente.cardId) {
+                            selectedIdx = i;
+                            break;
+                        }
+                    }
+                }
+                spCreditCard.setSelection(selectedIdx);
+            }
+        };
+
+        spCreditCard.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position >= 0 && position < availableCards.size()) {
+                    CreditCard selectedCard = availableCards.get(position);
+                    tvSelectedCardAvailableInfo.setText(String.format(
+                            Locale.US,
+                            "Disponible: %s | Corte: dia %d | Pago: dia %d",
+                            CurrencyUtils.formatUnitsConMoneda(selectedCard.available_limit),
+                            selectedCard.cutoff_day,
+                            selectedCard.payment_day
+                    ));
+
+                    if (cbInterestExempt.isChecked()) {
+                        etAppliedInterestRate.setText("0.0");
+                        etAppliedInterestRate.setEnabled(false);
+                    } else if (preserveInitialEditRate[0]) {
+                        preserveInitialEditRate[0] = false;
+                        etAppliedInterestRate.setEnabled(true);
+                        etAppliedInterestRate.setText(CurrencyUtils.formatTasaInput(existente.appliedInterestRate));
+                    } else {
+                        etAppliedInterestRate.setEnabled(true);
+                        etAppliedInterestRate.setText(CurrencyUtils.formatTasaInput(selectedCard.default_interest_rate));
+                    }
+                    recalcularResumenFinanciacion.run();
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
+        cbInterestExempt.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    etAppliedInterestRate.setText("0.0");
+                    etAppliedInterestRate.setEnabled(false);
+                    UiHelper.setFieldError(etAppliedInterestRate, errAppliedInterestRate, null);
+                } else {
+                    etAppliedInterestRate.setEnabled(true);
+                    int cardPos = spCreditCard.getSelectedItemPosition();
+                    if (cardPos >= 0 && cardPos < availableCards.size()) {
+                        CreditCard card = availableCards.get(cardPos);
+                        etAppliedInterestRate.setText(CurrencyUtils.formatTasaInput(card.default_interest_rate));
+                    }
+                }
+                recalcularResumenFinanciacion.run();
+            }
+        });
+
+        TextWatcher liveWatcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                recalcularResumenFinanciacion.run();
+            }
+        };
+        etMonto.addTextChangedListener(liveWatcher);
+        etInstallments.addTextChangedListener(liveWatcher);
+        etAppliedInterestRate.addTextChangedListener(liveWatcher);
 
         final List<Categoria> categoriasFiltradas = new ArrayList<>();
         final Runnable actualizarSpinnerCategorias = new Runnable() {
@@ -196,6 +337,29 @@ public class TransaccionFormDialog {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 actualizarSpinnerCategorias.run();
+                if ("INGRESO".equals(TIPOS[position]) && isCreditCardMethod(METODOS_PAGO[spMetodo.getSelectedItemPosition()])) {
+                    spMetodo.setSelection(0);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
+        spMetodo.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String metodo = METODOS_PAGO[position];
+                if (isCreditCardMethod(metodo)) {
+                    if ("INGRESO".equals(TIPOS[spTipo.getSelectedItemPosition()])) {
+                        spTipo.setSelection(0);
+                    }
+                    layoutCreditCardFinancing.setVisibility(View.VISIBLE);
+                    recalcularResumenFinanciacion.run();
+                } else {
+                    layoutCreditCardFinancing.setVisibility(View.GONE);
+                }
             }
 
             @Override
@@ -210,12 +374,30 @@ public class TransaccionFormDialog {
             etMonto.setText(CurrencyUtils.centavosToInputString(existente.montoCentavos));
             etFecha.setText(existente.fecha);
             etDescripcion.setText(existente.descripcion);
+
+            String rawMethod = existente.isCreditCardTransaction() ? "CREDIT_CARD" : existente.metodoPago;
             for (int i = 0; i < METODOS_PAGO.length; i++) {
-                if (METODOS_PAGO[i].equals(existente.metodoPago)) {
+                if (METODOS_PAGO[i].equalsIgnoreCase(rawMethod)) {
                     spMetodo.setSelection(i);
                     break;
                 }
             }
+
+            if (existente.isCreditCardTransaction()) {
+                layoutCreditCardFinancing.setVisibility(View.VISIBLE);
+                int inst = (existente.installments != null && existente.installments >= 1) ? existente.installments : 1;
+                etInstallments.setText(String.valueOf(inst));
+                boolean exempt = existente.isInterestExempt != null && existente.isInterestExempt;
+                cbInterestExempt.setChecked(exempt);
+                if (exempt) {
+                    etAppliedInterestRate.setText("0.0");
+                    etAppliedInterestRate.setEnabled(false);
+                } else if (existente.appliedInterestRate != null) {
+                    etAppliedInterestRate.setEnabled(true);
+                    etAppliedInterestRate.setText(CurrencyUtils.formatTasaInput(existente.appliedInterestRate));
+                }
+            }
+
             etComercio.setText(existente.comercio != null ? existente.comercio : "");
             etNotas.setText(existente.notas != null ? existente.notas : "");
         } else if (prefill != null) {
@@ -226,54 +408,43 @@ public class TransaccionFormDialog {
             }
             etFecha.setText(prefill.fecha != null ? prefill.fecha : DateUtils.getTodayIso());
             etDescripcion.setText(prefill.descripcion != null ? prefill.descripcion : "");
+            String rawMethod = isCreditCardMethod(prefill.metodoPago) ? "CREDIT_CARD" : prefill.metodoPago;
             for (int i = 0; i < METODOS_PAGO.length; i++) {
-                if (METODOS_PAGO[i].equals(prefill.metodoPago)) {
+                if (METODOS_PAGO[i].equalsIgnoreCase(rawMethod)) {
                     spMetodo.setSelection(i);
                     break;
                 }
+            }
+            if (isCreditCardMethod(rawMethod)) {
+                layoutCreditCardFinancing.setVisibility(View.VISIBLE);
             }
             etComercio.setText(prefill.comercio != null ? prefill.comercio : "");
             etNotas.setText(prefill.notas != null ? prefill.notas : "");
         } else {
             etFecha.setText(DateUtils.getTodayIso());
         }
+
         actualizarSpinnerCategorias.run();
+        populateCardsSpinner.run();
+        recalcularResumenFinanciacion.run();
 
-        // Botonera inferior
-        LinearLayout btnRow = new LinearLayout(context);
-        btnRow.setOrientation(LinearLayout.HORIZONTAL);
-        btnRow.setGravity(Gravity.END);
-        LinearLayout.LayoutParams btnRowLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-        );
-        btnRowLp.topMargin = UiHelper.dp(context, 16);
-        btnRow.setLayoutParams(btnRowLp);
+        // Actualizar listado de tarjetas desde /api/v1/credit-cards
+        ApiClient.getInstance().getCreditCards(new ApiCallback<List<CreditCard>>() {
+            @Override
+            public void onSuccess(List<CreditCard> data, PaginacionMeta meta) {
+                if (data != null) {
+                    availableCards.clear();
+                    availableCards.addAll(data);
+                    populateCardsSpinner.run();
+                }
+            }
 
-        LinearLayout btnCancelar = UiHelper.createActionButton(
-                context,
-                "fa-solid fa-xmark",
-                "Cancelar",
-                R.drawable.bg_button_secondary,
-                UiHelper.COLOR_SECUNDARIO
-        );
-        LinearLayout.LayoutParams cancelLp = (LinearLayout.LayoutParams) btnCancelar.getLayoutParams();
-        cancelLp.rightMargin = UiHelper.dp(context, 8);
-        btnCancelar.setLayoutParams(cancelLp);
+            @Override
+            public void onError(ApiError error) {
+            }
+        });
 
-        final LinearLayout btnGuardar = UiHelper.createActionButton(
-                context,
-                "fa-solid fa-floppy-disk",
-                "Guardar cambios",
-                R.drawable.bg_button_primary,
-                UiHelper.COLOR_TEXTO_INVERTIDO
-        );
-
-        btnRow.addView(btnCancelar);
-        btnRow.addView(btnGuardar);
-        root.addView(btnRow);
-
-        builder.setView(scroll);
+        builder.setView(rootView);
         final AlertDialog dialog = builder.create();
 
         btnCancelar.setOnClickListener(new View.OnClickListener() {
@@ -286,12 +457,14 @@ public class TransaccionFormDialog {
         btnGuardar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Limpiar errores previos
                 UiHelper.setFieldError(null, globalErrorTv, null);
                 UiHelper.setFieldError(etMonto, errMonto, null);
                 UiHelper.setFieldError(etFecha, errFecha, null);
                 UiHelper.setFieldError(etDescripcion, errDescripcion, null);
                 UiHelper.setFieldError(null, errCategoria, null);
+                UiHelper.setFieldError(null, errCreditCard, null);
+                UiHelper.setFieldError(etInstallments, errInstallments, null);
+                UiHelper.setFieldError(etAppliedInterestRate, errAppliedInterestRate, null);
                 UiHelper.setFieldError(etComercio, errComercio, null);
                 UiHelper.setFieldError(etNotas, errNotas, null);
 
@@ -340,6 +513,75 @@ public class TransaccionFormDialog {
                     valid = false;
                 }
 
+                Integer cardId = null;
+                Integer installments = null;
+                Boolean isInterestExempt = null;
+                Double appliedInterestRate = null;
+                Double monthlyInstallmentAmount = null;
+                Double totalInterestAmount = null;
+                Double totalWithInterest = null;
+
+                if (isCreditCardMethod(metodo)) {
+                    if (!"GASTO".equals(tipo)) {
+                        UiHelper.setFieldError(null, globalErrorTv, "CREDIT_CARD solo aplica a transacciones de tipo GASTO.");
+                        valid = false;
+                    }
+                    int cardPos = spCreditCard.getSelectedItemPosition();
+                    if (availableCards.isEmpty() || cardPos < 0 || cardPos >= availableCards.size()) {
+                        UiHelper.setFieldError(null, errCreditCard, "Seleccione una tarjeta de credito registrada.");
+                        valid = false;
+                    } else {
+                        cardId = availableCards.get(cardPos).id;
+                    }
+
+                    int parsedInstallments = -1;
+                    try {
+                        parsedInstallments = Integer.parseInt(etInstallments.getText().toString().trim());
+                    } catch (Exception ignored) {
+                    }
+                    if (parsedInstallments < 1 || parsedInstallments > CreditCalculator.MAX_INSTALLMENTS) {
+                        UiHelper.setFieldError(
+                                etInstallments,
+                                errInstallments,
+                                "El numero de cuotas debe ser un entero entre 1 y " + CreditCalculator.MAX_INSTALLMENTS + "."
+                        );
+                        valid = false;
+                    } else {
+                        installments = parsedInstallments;
+                    }
+
+                    boolean exempt = cbInterestExempt.isChecked();
+                    isInterestExempt = exempt;
+
+                    if (exempt) {
+                        appliedInterestRate = 0.0;
+                    } else {
+                        double parsedRate = -1.0;
+                        try {
+                            parsedRate = Double.parseDouble(etAppliedInterestRate.getText().toString().trim().replace(",", "."));
+                        } catch (Exception ignored) {
+                        }
+                        if (Double.isNaN(parsedRate) || Double.isInfinite(parsedRate) || parsedRate < 0.0 || parsedRate > 100.0) {
+                            UiHelper.setFieldError(etAppliedInterestRate, errAppliedInterestRate, "Ingrese una tasa mensual entre 0 y 100.");
+                            valid = false;
+                        } else {
+                            appliedInterestRate = parsedRate;
+                        }
+                    }
+
+                    if (valid && installments != null && appliedInterestRate != null) {
+                        CreditCalculator.SimulationResult sim = CreditCalculator.simulate(
+                                montoCentavos,
+                                installments,
+                                appliedInterestRate,
+                                isInterestExempt
+                        );
+                        monthlyInstallmentAmount = sim.monthlyInstallmentAmount;
+                        totalInterestAmount = sim.totalInterestAmount;
+                        totalWithInterest = sim.totalWithInterest;
+                    }
+                }
+
                 if (!valid) {
                     return;
                 }
@@ -351,6 +593,9 @@ public class TransaccionFormDialog {
                     @Override
                     public void onSuccess(Transaccion data, PaginacionMeta meta) {
                         btnGuardar.setEnabled(true);
+                        if (context instanceof MainActivity) {
+                            ((MainActivity) context).refreshCreditCardsCache();
+                        }
                         dialog.dismiss();
                         if (listener != null) {
                             listener.onSaved(data);
@@ -374,6 +619,15 @@ public class TransaccionFormDialog {
                         if (fieldMap.containsKey("categoria_id")) {
                             UiHelper.setFieldError(null, errCategoria, fieldMap.get("categoria_id"));
                         }
+                        if (fieldMap.containsKey("card_id")) {
+                            UiHelper.setFieldError(null, errCreditCard, fieldMap.get("card_id"));
+                        }
+                        if (fieldMap.containsKey("installments")) {
+                            UiHelper.setFieldError(etInstallments, errInstallments, fieldMap.get("installments"));
+                        }
+                        if (fieldMap.containsKey("applied_interest_rate")) {
+                            UiHelper.setFieldError(etAppliedInterestRate, errAppliedInterestRate, fieldMap.get("applied_interest_rate"));
+                        }
                         if (fieldMap.containsKey("comercio")) {
                             UiHelper.setFieldError(etComercio, errComercio, fieldMap.get("comercio"));
                         }
@@ -385,11 +639,44 @@ public class TransaccionFormDialog {
 
                 if (esEdicion) {
                     ApiClient.getInstance().actualizarTransaccion(
-                            existente.id, tipo, naturaleza, montoCentavos, fecha, desc, categoriaId, metodo, comercio, notas, cb
+                            existente.id,
+                            tipo,
+                            naturaleza,
+                            montoCentavos,
+                            fecha,
+                            desc,
+                            categoriaId,
+                            metodo,
+                            comercio,
+                            notas,
+                            cardId,
+                            installments,
+                            isInterestExempt,
+                            appliedInterestRate,
+                            monthlyInstallmentAmount,
+                            totalInterestAmount,
+                            totalWithInterest,
+                            cb
                     );
                 } else {
                     ApiClient.getInstance().crearTransaccion(
-                            tipo, naturaleza, montoCentavos, fecha, desc, categoriaId, metodo, comercio, notas, cb
+                            tipo,
+                            naturaleza,
+                            montoCentavos,
+                            fecha,
+                            desc,
+                            categoriaId,
+                            metodo,
+                            comercio,
+                            notas,
+                            cardId,
+                            installments,
+                            isInterestExempt,
+                            appliedInterestRate,
+                            monthlyInstallmentAmount,
+                            totalInterestAmount,
+                            totalWithInterest,
+                            cb
                     );
                 }
             }

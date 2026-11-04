@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/colorSurfaceCard">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_16">
+
+        <TextView
+            android:id="@+id/tvTxDialogTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/space_8"
+            android:text="Nueva transaccion"
+            android:textColor="@color/colorPrimaryAccent"
+            android:textSize="@dimen/text_subtitle"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvTxGlobalError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Tipo de movimiento -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Tipo de movimiento *"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spTxTipo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- Naturaleza -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Naturaleza *"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spTxNaturaleza"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- Monto -->
+        <TextView
+            android:id="@+id/tvLabelTxMonto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Monto *"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etTxMonto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="0.00"
+            android:inputType="numberDecimal"
+            android:paddingLeft="12dp"
+            android:paddingTop="10dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/colorTextPrimary"
+            android:textColorHint="@color/color_texto_deshabilitado"
+            android:textSize="@dimen/text_base" />
+
+        <TextView
+            android:id="@+id/errTxMonto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Fecha -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Fecha (YYYY-MM-DD) *"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/etTxFecha"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="@dimen/space_8"
+                android:layout_weight="1"
+                android:background="@drawable/bg_input"
+                android:hint="YYYY-MM-DD"
+                android:inputType="date"
+                android:paddingLeft="12dp"
+                android:paddingTop="10dp"
+                android:paddingRight="12dp"
+                android:paddingBottom="10dp"
+                android:textColor="@color/colorTextPrimary"
+                android:textColorHint="@color/color_texto_deshabilitado"
+                android:textSize="@dimen/text_base" />
+
+            <LinearLayout
+                android:id="@+id/btnTxPickDate"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_height"
+                android:background="@drawable/bg_button_secondary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp">
+
+                <TextView
+                    android:id="@+id/tvBtnTxPickDateIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="@dimen/space_8"
+                    android:contentDescription="@null"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="@dimen/text_base" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Calendario"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="@dimen/text_base"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/errTxFecha"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Descripcion -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Descripcion *"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etTxDescripcion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="Ej. Pago de servicio o compra"
+            android:inputType="textCapSentences"
+            android:paddingLeft="12dp"
+            android:paddingTop="10dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/colorTextPrimary"
+            android:textColorHint="@color/color_texto_deshabilitado"
+            android:textSize="@dimen/text_base" />
+
+        <TextView
+            android:id="@+id/errTxDescripcion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Categoria -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Categoria *"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spTxCategoria"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/errTxCategoria"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Metodo de pago -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Metodo de pago *"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spTxMetodoPago"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- Seccion dinamica de Financiacion con Tarjeta de Credito (CREDIT_CARD) -->
+        <LinearLayout
+            android:id="@+id/layoutCreditCardFinancing"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_16"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="@dimen/space_16"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/space_8"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvFinancingHeaderIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="@dimen/space_8"
+                    android:contentDescription="@null"
+                    android:textColor="@color/colorPrimaryAccent"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Financiacion con tarjeta de credito"
+                    android:textColor="@color/colorPrimaryAccent"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Spinner para elegir la tarjeta registrada (card_id) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:layout_marginBottom="@dimen/space_4"
+                android:text="Tarjeta de credito (card_id) *"
+                android:textColor="@color/colorTextSecondary"
+                android:textSize="@dimen/text_label"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/spCreditCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/tvSelectedCardAvailableInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:textColor="@color/colorTextSecondary"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/errCreditCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:textColor="@color/colorExpenseRed"
+                android:textSize="@dimen/text_label"
+                android:visibility="gone" />
+
+            <!-- EditText numerico para Numero de cuotas (installments) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_8"
+                android:layout_marginBottom="@dimen/space_4"
+                android:text="Numero de cuotas (installments) *"
+                android:textColor="@color/colorTextSecondary"
+                android:textSize="@dimen/text_label"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etInstallments"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_input"
+                android:hint="1 a 48"
+                android:inputType="number"
+                android:paddingLeft="12dp"
+                android:paddingTop="10dp"
+                android:paddingRight="12dp"
+                android:paddingBottom="10dp"
+                android:text="1"
+                android:textColor="@color/colorTextPrimary"
+                android:textColorHint="@color/color_texto_deshabilitado"
+                android:textSize="@dimen/text_base" />
+
+            <TextView
+                android:id="@+id/errInstallments"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:textColor="@color/colorExpenseRed"
+                android:textSize="@dimen/text_label"
+                android:visibility="gone" />
+
+            <!-- CheckBox: Compra exenta de intereses (0%) (is_interest_exempt) -->
+            <CheckBox
+                android:id="@+id/cbInterestExempt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_8"
+                android:text="@string/compra_exenta_intereses"
+                android:textColor="@color/colorTextPrimary"
+                android:textSize="@dimen/text_base" />
+
+            <!-- EditText decimal para Tasa de interes mensual (%) (applied_interest_rate) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_8"
+                android:layout_marginBottom="@dimen/space_4"
+                android:text="Tasa de interes mensual (%) *"
+                android:textColor="@color/colorTextSecondary"
+                android:textSize="@dimen/text_label"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etAppliedInterestRate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_input"
+                android:hint="0.0"
+                android:inputType="numberDecimal"
+                android:paddingLeft="12dp"
+                android:paddingTop="10dp"
+                android:paddingRight="12dp"
+                android:paddingBottom="10dp"
+                android:text="0.0"
+                android:textColor="@color/colorTextPrimary"
+                android:textColorHint="@color/color_texto_deshabilitado"
+                android:textSize="@dimen/text_base" />
+
+            <TextView
+                android:id="@+id/errAppliedInterestRate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:textColor="@color/colorExpenseRed"
+                android:textSize="@dimen/text_label"
+                android:visibility="gone" />
+
+            <!-- Resumen contable en vivo antes de guardar -->
+            <LinearLayout
+                android:id="@+id/layoutLiveFinancingSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:background="@drawable/bg_badge_primary"
+                android:orientation="vertical"
+                android:padding="@dimen/space_16">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_8"
+                    android:text="RESUMEN CONTABLE ESTIMADO"
+                    android:textColor="@color/colorPrimaryAccent"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <!-- Cuota mensual estimada (monthly_installment_amount) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_4"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Cuota mensual estimada:"
+                        android:textColor="@color/colorTextSecondary"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tvSummaryMonthlyInstallment"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0.00"
+                        android:textColor="@color/colorTextPrimary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Total de intereses (total_interest_amount) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_4"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Total de intereses:"
+                        android:textColor="@color/colorTextSecondary"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tvSummaryTotalInterest"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0.00"
+                        android:textColor="@color/colorExpenseRed"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:layout_marginBottom="@dimen/space_4"
+                    android:background="@color/colorBorderDivider" />
+
+                <!-- Costo total (total_with_interest) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Costo total:"
+                        android:textColor="@color/colorPrimaryAccent"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvSummaryTotalWithInterest"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0.00"
+                        android:textColor="@color/colorPrimaryAccent"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Comercio -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Comercio / Entidad (opcional)"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etTxComercio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="Ej. Supermaxi, Empresa Electrica"
+            android:inputType="textCapWords"
+            android:paddingLeft="12dp"
+            android:paddingTop="10dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/colorTextPrimary"
+            android:textColorHint="@color/color_texto_deshabilitado"
+            android:textSize="@dimen/text_base" />
+
+        <TextView
+            android:id="@+id/errTxComercio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Notas -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="Notas adicionales (opcional)"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="@dimen/text_label"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etTxNotas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_input"
+            android:hint="Observaciones"
+            android:inputType="textCapSentences"
+            android:paddingLeft="12dp"
+            android:paddingTop="10dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/colorTextPrimary"
+            android:textColorHint="@color/color_texto_deshabilitado"
+            android:textSize="@dimen/text_base" />
+
+        <TextView
+            android:id="@+id/errTxNotas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            android:textColor="@color/colorExpenseRed"
+            android:textSize="@dimen/text_label"
+            android:visibility="gone" />
+
+        <!-- Botones inferiores -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_16"
+            android:gravity="end"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/btnTxCancelar"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginRight="@dimen/space_8"
+                android:background="@drawable/bg_button_secondary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp">
+
+                <TextView
+                    android:id="@+id/tvBtnTxCancelarIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="@dimen/space_8"
+                    android:contentDescription="@null"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="@dimen/text_base" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cancelar"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="@dimen/text_base"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btnTxGuardar"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/button_height"
+                android:background="@drawable/bg_button_primary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingLeft="14dp"
+                android:paddingRight="14dp">
+
+                <TextView
+                    android:id="@+id/tvBtnTxGuardarIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="@dimen/space_8"
+                    android:contentDescription="@null"
+                    android:textColor="@color/color_texto_invertido"
+                    android:textSize="@dimen/text_base" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Guardar cambios"
+                    android:textColor="@color/color_texto_invertido"
+                    android:textSize="@dimen/text_base"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

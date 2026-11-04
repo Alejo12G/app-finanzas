@@ -243,18 +243,18 @@ public final class FaIcon {
     }
 
     public static String getMetodoPagoIcon(String metodoPago) {
-        if ("EFECTIVO".equals(metodoPago)) return "fa-solid fa-money-bill";
-        if ("DEBITO".equals(metodoPago)) return "fa-solid fa-money-check";
-        if ("CREDITO".equals(metodoPago)) return "fa-solid fa-credit-card";
-        if ("TRANSFERENCIA".equals(metodoPago)) return "fa-solid fa-building-columns";
+        if ("EFECTIVO".equals(metodoPago) || "CASH".equals(metodoPago)) return "fa-solid fa-money-bill";
+        if ("DEBITO".equals(metodoPago) || "DEBIT".equals(metodoPago)) return "fa-solid fa-money-check";
+        if ("CREDITO".equals(metodoPago) || "CREDIT_CARD".equals(metodoPago)) return "fa-solid fa-credit-card";
+        if ("TRANSFERENCIA".equals(metodoPago) || "TRANSFER".equals(metodoPago)) return "fa-solid fa-building-columns";
         return "fa-solid fa-circle-question";
     }
 
     public static String getMetodoPagoLabel(String metodoPago) {
-        if ("EFECTIVO".equals(metodoPago)) return "Efectivo";
-        if ("DEBITO".equals(metodoPago)) return "Tarjeta de debito";
-        if ("CREDITO".equals(metodoPago)) return "Tarjeta de credito";
-        if ("TRANSFERENCIA".equals(metodoPago)) return "Transferencia";
+        if ("EFECTIVO".equals(metodoPago) || "CASH".equals(metodoPago)) return "Efectivo";
+        if ("DEBITO".equals(metodoPago) || "DEBIT".equals(metodoPago)) return "Tarjeta de debito";
+        if ("CREDITO".equals(metodoPago) || "CREDIT_CARD".equals(metodoPago)) return "Tarjeta de credito";
+        if ("TRANSFERENCIA".equals(metodoPago) || "TRANSFER".equals(metodoPago)) return "Transferencia";
         return "Otro";
     }
 
