@@ -1,0 +1,15 @@
+{
+  "name": "gastos-backend-vps",
+  "version": "1.0.0",
+  "description": "Backend API REST ligero para gestion de finanzas personales y compras con SQLite y Gemini IA",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --no-warnings src/server.js",
+    "dev": "node --no-warnings --watch src/server.js",
+    "test": "node --no-warnings test/verify-contract.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "private": true
+}

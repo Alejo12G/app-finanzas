@@ -1,0 +1,13 @@
+{
+  "host": "51.161.47.99",
+  "puerto": 54892,
+  "protocolo": "http",
+  "ruta_base": "/api/v1",
+  "header_token": "X-App-Private-Token",
+  "token_privado": "SZ6ydSFNmkAbrFLLrRahSEVxGnLkvABw",
+  "timeout_general_ms": 15000,
+  "timeout_ia_ms": 90000,
+  "moneda_defecto": "USD",
+  "puerto_cliente_local": 38492,
+  "version_app": "1.0.0"
+}

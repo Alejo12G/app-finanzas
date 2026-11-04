@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_card"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="@dimen/space_32">
+
+    <TextView
+        android:id="@+id/tvEmptyIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@null"
+        android:textColor="@color/color_texto_deshabilitado"
+        android:textSize="48sp" />
+
+    <TextView
+        android:id="@+id/tvEmptyMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_16"
+        android:gravity="center"
+        android:text="@string/sin_registros"
+        android:textColor="@color/color_texto_secundario"
+        android:textSize="@dimen/text_base" />
+
+    <Button
+        android:id="@+id/btnEmptyAction"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/button_height"
+        android:layout_marginTop="@dimen/space_16"
+        android:background="@drawable/bg_button_primary"
+        android:paddingLeft="@dimen/space_16"
+        android:paddingRight="@dimen/space_16"
+        android:textAllCaps="false"
+        android:textColor="@color/color_texto_invertido"
+        android:textSize="@dimen/text_base"
+        android:visibility="gone" />
+</LinearLayout>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_badge_danger"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="@dimen/space_16">
+
+    <TextView
+        android:id="@+id/tvErrorBannerIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="@dimen/space_8"
+        android:contentDescription="@null"
+        android:textColor="@color/color_peligro"
+        android:textSize="18sp" />
+
+    <TextView
+        android:id="@+id/tvErrorBannerMsg"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textColor="@color/color_peligro"
+        android:textSize="@dimen/text_base" />
+
+    <Button
+        android:id="@+id/btnErrorBannerRetry"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:layout_marginLeft="@dimen/space_8"
+        android:background="@drawable/bg_button_secondary"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:text="@string/btn_reintentar"
+        android:textAllCaps="false"
+        android:textColor="@color/color_secundario"
+        android:textSize="12sp" />
+</LinearLayout>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Paleta obligatoria UI_DESIGN.md Seccion 2.1 -->
+    <color name="color_primario">#1B2A4A</color>
+    <color name="color_secundario">#4A5568</color>
+    <color name="color_exito">#2E7D32</color>
+    <color name="color_peligro">#C62828</color>
+    <color name="color_fondo">#F4F6F8</color>
+
+    <!-- Colores de soporte UI_DESIGN.md Seccion 2.2 -->
+    <color name="color_superficie">#FFFFFF</color>
+    <color name="color_primario_hover">#24375F</color>
+    <color name="color_primario_suave">#E8ECF3</color>
+    <color name="color_borde">#D9DEE5</color>
+    <color name="color_texto">#1A202C</color>
+    <color name="color_texto_secundario">#4A5568</color>
+    <color name="color_texto_deshabilitado">#A0AEC0</color>
+    <color name="color_texto_invertido">#FFFFFF</color>
+    <color name="color_advertencia">#B26A00</color>
+    <color name="color_exito_suave">#E8F5E9</color>
+    <color name="color_peligro_suave">#FDECEA</color>
+    <color name="color_advertencia_suave">#FFF4E5</color>
+</resources>

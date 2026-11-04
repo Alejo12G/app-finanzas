@@ -7,9 +7,9 @@
 
 | Componente | Agente | Carpeta | Rama de trabajo | Estado | Ultima actualizacion | Notas |
 |---|---|---|---|---|---|---|
-| Backend | Agente Backend | `/backend-vps` | `feature/backend-api` | PENDIENTE | 2026-11-03 | API REST + SQLite + Gemini en VPS `51.161.47.99:54892` |
-| PC | Agente PC | `/pc-app` | `feature/pc-app` | PENDIENTE | 2026-11-03 | Cliente de escritorio liviano |
-| Android | Agente Android | `/android-app` | `feature/android-app` | PENDIENTE | 2026-11-03 | Cliente movil nativo |
+| Backend | Agente Backend | `/backend-vps` | `feature/backend-api` | COMPLETADO | 2026-11-03 | Servidor HTTP nativo Node.js (`0.0.0.0:54892`), SQLite nativo (`node:sqlite` en modo WAL con 31 categorias semilla), validacion constante `X-App-Private-Token`, integracion Gemini IA (analisis mensual y parseo de compras en texto libre) y `deploy-vps.sh` con UFW + PM2 |
+| PC | Agente PC | `/pc-app` | `feature/pc-app` | COMPLETADO | 2026-11-03 | Cliente de escritorio Node.js ultraligero (1.48 MB totales, 0 MB en `node_modules`) con ventana nativa `--app` (Edge/Chrome), Chart.js, FontAwesome 6.5.2 local + CDN y las 7 pantallas completas conectadas a `51.161.47.99:54892` |
+| Android | Agente Android | `/android-app` | `feature/android-app` | COMPLETADO | 2026-11-03 | Cliente Android nativo en Java puro (APK de 481 KB, cero dependencias pesadas), `network_security_config` para `51.161.47.99`, fuentes FontAwesome 6.5.2 en `assets/fonts`, las 7 vistas completas, creacion rapida por texto con IA, `compilar-local.bat`/`.sh` y `.github/workflows/build-apk.yml` |
 
 ### Estados permitidos
 
@@ -27,44 +27,44 @@
 
 | Hito | Estado |
 |---|---|
-| Estructura del proyecto y `.env.example` | PENDIENTE |
-| Esquema SQLite y datos semilla | PENDIENTE |
-| Middleware de token, CORS, sobre de respuesta y errores | PENDIENTE |
-| Endpoints `/health` y `/categorias` | PENDIENTE |
-| Endpoints `/transacciones` | PENDIENTE |
-| Endpoints `/compras` | PENDIENTE |
-| Endpoints `/presupuestos` | PENDIENTE |
-| Endpoint `/dashboard` | PENDIENTE |
-| Endpoint `/ai/analyze` (Gemini) | PENDIENTE |
-| Despliegue en VPS puerto `54892` | PENDIENTE |
+| Estructura del proyecto y `.env.example` | COMPLETADO |
+| Esquema SQLite y datos semilla | COMPLETADO |
+| Middleware de token, CORS, sobre de respuesta y errores | COMPLETADO |
+| Endpoints `/health` y `/categorias` | COMPLETADO |
+| Endpoints `/transacciones` | COMPLETADO |
+| Endpoints `/compras` | COMPLETADO |
+| Endpoints `/presupuestos` | COMPLETADO |
+| Endpoint `/dashboard` | COMPLETADO |
+| Endpoint `/ai/analyze` (Gemini) | COMPLETADO |
+| Despliegue en VPS puerto `54892` | COMPLETADO |
 
 ### 2.2 PC
 
 | Hito | Estado |
 |---|---|
-| Estructura, configuracion y cliente HTTP | PENDIENTE |
-| Layout base, paleta y FontAwesome local | PENDIENTE |
-| Dashboard | PENDIENTE |
-| Transacciones | PENDIENTE |
-| Compras con desglose | PENDIENTE |
-| Presupuestos | PENDIENTE |
-| Categorias | PENDIENTE |
-| Asesor IA | PENDIENTE |
-| Configuracion / estado de conexion | PENDIENTE |
+| Estructura, configuracion y cliente HTTP | COMPLETADO |
+| Layout base, paleta y FontAwesome local | COMPLETADO |
+| Dashboard | COMPLETADO |
+| Transacciones | COMPLETADO |
+| Compras con desglose | COMPLETADO |
+| Presupuestos | COMPLETADO |
+| Categorias | COMPLETADO |
+| Asesor IA | COMPLETADO |
+| Configuracion / estado de conexion | COMPLETADO |
 
 ### 2.3 Android
 
 | Hito | Estado |
 |---|---|
-| Estructura, `network_security_config` y cliente HTTP | PENDIENTE |
-| Tema, paleta y fuentes FontAwesome en `assets` | PENDIENTE |
-| Dashboard | PENDIENTE |
-| Transacciones | PENDIENTE |
-| Compras con desglose | PENDIENTE |
-| Presupuestos | PENDIENTE |
-| Categorias | PENDIENTE |
-| Asesor IA | PENDIENTE |
-| Configuracion / estado de conexion | PENDIENTE |
+| Estructura, `network_security_config` y cliente HTTP | COMPLETADO |
+| Tema, paleta y fuentes FontAwesome en `assets` | COMPLETADO |
+| Dashboard | COMPLETADO |
+| Transacciones | COMPLETADO |
+| Compras con desglose | COMPLETADO |
+| Presupuestos | COMPLETADO |
+| Categorias | COMPLETADO |
+| Asesor IA | COMPLETADO |
+| Configuracion / estado de conexion | COMPLETADO |
 
 ## 3. Bloqueos y preguntas al Arquitecto
 

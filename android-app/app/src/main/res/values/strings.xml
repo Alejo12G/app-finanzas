@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Finanzas Personales</string>
+    <string name="nav_dashboard">Panel</string>
+    <string name="nav_transacciones">Transacciones</string>
+    <string name="nav_compras">Compras</string>
+    <string name="nav_presupuestos">Presupuestos</string>
+    <string name="nav_categorias">Categorias</string>
+    <string name="nav_asesor_ia">Asesor IA</string>
+    <string name="nav_configuracion">Configuracion</string>
+    <string name="err_sin_conexion">No se pudo conectar con el servidor.</string>
+    <string name="err_token_invalido">Token de acceso invalido.</string>
+    <string name="err_limite_ia">Limite de analisis IA alcanzado. Intente mas tarde.</string>
+    <string name="btn_reintentar">Reintentar</string>
+    <string name="confirmar_eliminar_transaccion">Esta accion no se puede deshacer. Desea eliminar esta transaccion?</string>
+    <string name="confirmar_eliminar_compra">Esta accion no se puede deshacer. Desea eliminar esta compra y su desglose de articulos?</string>
+    <string name="confirmar_eliminar_presupuesto">Esta accion no se puede deshacer. Desea eliminar este presupuesto?</string>
+    <string name="confirmar_eliminar_categoria">Esta accion no se puede deshacer. Desea eliminar esta categoria?</string>
+    <string name="sin_registros">No hay registros para este periodo.</string>
+</resources>

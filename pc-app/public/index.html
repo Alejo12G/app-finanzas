@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema Contable y Financiero - Cliente de Escritorio</title>
+  <!-- FontAwesome 6.5.2 Local (UI_DESIGN.md 1.1) + CDN (Especificacion PC) -->
+  <link rel="stylesheet" href="css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <!-- Estilos del Sistema de Diseno Contable -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Barra Superior -->
+    <header class="topbar">
+      <div class="topbar-brand">
+        <i class="fa-solid fa-building-columns" aria-hidden="true"></i>
+        <span class="topbar-title">Sistema de Gestion Contable y Presupuestaria</span>
+        <span class="topbar-subtitle">Escritorio PC v1.0.0</span>
+      </div>
+      <div class="topbar-status">
+        <span id="topbar-currency" class="currency-badge" title="Moneda activa del servidor">
+          <i class="fa-solid fa-coins" aria-hidden="true"></i>
+          <span id="topbar-currency-code">USD</span>
+        </span>
+        <div id="topbar-connection-pill" class="connection-pill">
+          <i id="topbar-connection-icon" class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+          <span id="topbar-connection-text">Verificando servidor...</span>
+        </div>
+        <button type="button" id="btn-topbar-sync" class="btn btn-secondary btn-sm" title="Sincronizar datos con el servidor">
+          <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+          <span>Sincronizar</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Cuerpo Principal -->
+    <div class="app-body">
+      <!-- Navegacion Lateral (UI_DESIGN.md 5.1) -->
+      <aside class="sidebar">
+        <nav aria-label="Navegacion principal">
+          <ul class="nav-list">
+            <li class="nav-item">
+              <button type="button" class="nav-btn active" data-view="dashboard">
+                <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
+                <span>Panel General</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" class="nav-btn" data-view="transacciones">
+                <i class="fa-solid fa-money-bill-transfer" aria-hidden="true"></i>
+                <span>Transacciones</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" class="nav-btn" data-view="compras">
+                <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
+                <span>Compras Detalladas</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" class="nav-btn" data-view="presupuestos">
+                <i class="fa-solid fa-wallet" aria-hidden="true"></i>
+                <span>Presupuestos</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" class="nav-btn" data-view="categorias">
+                <i class="fa-solid fa-tags" aria-hidden="true"></i>
+                <span>Categorias</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" class="nav-btn" data-view="ia">
+                <i class="fa-solid fa-robot" aria-hidden="true"></i>
+                <span>Asesor IA</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button type="button" class="nav-btn" data-view="configuracion">
+                <i class="fa-solid fa-gear" aria-hidden="true"></i>
+                <span>Configuracion</span>
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="sidebar-footer-row">
+            <span>Servidor VPS:</span>
+            <strong id="sidebar-host-label" class="tabular-nums">51.161.47.99:54892</strong>
+          </div>
+          <div class="sidebar-footer-row">
+            <span>Estado API:</span>
+            <span id="sidebar-api-version">v1.0.0</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Area Principal de Contenido -->
+      <main class="main-content">
+        <!-- Banner Global de Bloqueo 401 o Sin Conexion -->
+        <div id="global-alert-container" style="display: none;"></div>
+
+        <!-- =========================================================
+             1. PANTALLA: DASHBOARD GENERAL
+             ========================================================= -->
+        <section id="view-dashboard" class="view-section active" aria-labelledby="title-dashboard">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 id="title-dashboard" class="page-title">
+                <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
+                <span>Panel Financiero General</span>
+              </h1>
+              <p class="page-subtitle">Resumen contable de ingresos, gastos, flujo de caja y ejecucion presupuestaria</p>
+            </div>
+            <div class="page-actions">
+              <div class="period-selector">
+                <button type="button" id="dash-prev-month" class="btn btn-secondary btn-icon-only" aria-label="Mes anterior" title="Mes anterior">
+                  <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <select id="dash-select-mes" class="form-control" style="width: 130px; height: 32px;" aria-label="Seleccionar mes"></select>
+                <input type="number" id="dash-input-anio" class="form-control tabular-nums" style="width: 88px; height: 32px;" min="2000" max="2100" aria-label="Seleccionar anio" />
+                <button type="button" id="dash-next-month" class="btn btn-secondary btn-icon-only" aria-label="Mes siguiente" title="Mes siguiente">
+                  <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
+              </div>
+              <button type="button" id="btn-dash-reload" class="btn btn-secondary">
+                <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                <span>Actualizar</span>
+              </button>
+              <button type="button" id="btn-dash-new-tx" class="btn btn-primary">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                <span>Nuevo Ingreso / Gasto</span>
+              </button>
+              <button type="button" id="btn-dash-new-compra" class="btn btn-secondary">
+                <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
+                <span>Registrar Compra</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 KPIs Principales -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>INGRESOS DEL PERIODO</span>
+                <span class="kpi-icon"><i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i></span>
+              </div>
+              <div id="kpi-ingresos" class="kpi-value amount-ingreso">+ 0.00</div>
+              <div class="kpi-meta">
+                <span>Variacion vs. mes anterior:</span>
+                <strong id="kpi-ingresos-var">0.00 %</strong>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>GASTOS DEL PERIODO</span>
+                <span class="kpi-icon"><i class="fa-solid fa-arrow-trend-down" aria-hidden="true"></i></span>
+              </div>
+              <div id="kpi-gastos" class="kpi-value amount-gasto">- 0.00</div>
+              <div class="kpi-meta">
+                <span id="kpi-gastos-desglose">Fijos: 0.00 | Variables: 0.00</span>
+                <strong id="kpi-gastos-var">0.00 %</strong>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>BALANCE / FLUJO DE CAJA</span>
+                <span class="kpi-icon"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></span>
+              </div>
+              <div id="kpi-balance" class="kpi-value amount-balance-pos">USD 0.00</div>
+              <div class="kpi-meta">
+                <span>Operaciones registradas:</span>
+                <strong id="kpi-tx-count">0</strong>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>TASA DE AHORRO</span>
+                <span class="kpi-icon"><i class="fa-solid fa-piggy-bank" aria-hidden="true"></i></span>
+              </div>
+              <div id="kpi-ahorro" class="kpi-value amount-neutro">0.00 %</div>
+              <div class="kpi-meta">
+                <span>Estado presupuestario:</span>
+                <strong id="kpi-presupuesto-resumen">Sin alertas</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Graficos: Evolucion 6 Meses y Gastos por Categoria -->
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">
+                  <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+                  <span>Evolucion de Ingresos vs. Gastos (Ultimos 6 Meses)</span>
+                </h2>
+              </div>
+              <div class="chart-box">
+                <canvas id="chart-evolucion"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">
+                  <i class="fa-solid fa-chart-pie" aria-hidden="true"></i>
+                  <span>Distribucion de Gastos por Categoria</span>
+                </h2>
+              </div>
+              <div class="chart-box">
+                <canvas id="chart-categorias"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resumen de Presupuestos / Alertas y Desglose por Categoria -->
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">
+                  <i class="fa-solid fa-wallet" aria-hidden="true"></i>
+                  <span>Control y Alertas de Presupuesto Mensual</span>
+                </h2>
+                <button type="button" class="btn btn-secondary btn-sm" data-goto="presupuestos">
+                  <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                  <span>Gestionar Presupuestos</span>
+                </button>
+              </div>
+              <div id="dash-presupuestos-box"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">
+                  <i class="fa-solid fa-tags" aria-hidden="true"></i>
+                  <span>Desglose Contable por Categoria</span>
+                </h2>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Categoria</th>
+                      <th>Tipo</th>
+                      <th class="text-right">Participacion</th>
+                      <th class="text-right">Importe Total</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dash-categorias-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ultimas 5 Transacciones del Periodo -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <i class="fa-solid fa-money-bill-transfer" aria-hidden="true"></i>
+                <span>Ultimas 5 Transacciones del Periodo</span>
+              </h2>
+              <button type="button" class="btn btn-secondary btn-sm" data-goto="transacciones">
+                <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                <span>Ver Libro de Transacciones</span>
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Categoria</th>
+                    <th>Descripcion</th>
+                    <th>Comercio</th>
+                    <th>Naturaleza</th>
+                    <th>Metodo de Pago</th>
+                    <th class="text-right">Monto</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-ultimas-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             2. PANTALLA: TRANSACCIONES (INGRESOS Y GASTOS RAPIDOS)
+             ========================================================= -->
+        <section id="view-transacciones" class="view-section" aria-labelledby="title-transacciones">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 id="title-transacciones" class="page-title">
+                <i class="fa-solid fa-money-bill-transfer" aria-hidden="true"></i>
+                <span>Registro y Libro de Transacciones</span>
+              </h1>
+              <p class="page-subtitle">Alta rapida de ingresos y gastos generales, consulta historica y filtros contables</p>
+            </div>
+            <div class="page-actions">
+              <button type="button" id="btn-tx-export-csv" class="btn btn-secondary">
+                <i class="fa-solid fa-file-csv" aria-hidden="true"></i>
+                <span>Exportar CSV</span>
+              </button>
+              <button type="button" id="btn-tx-reload" class="btn btn-secondary">
+                <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                <span>Recargar</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid-sidebar-layout">
+            <!-- Formulario de Registro / Edicion de Transaccion -->
+            <div class="card">
+              <div class="card-header">
+                <h2 id="tx-form-title" class="card-title">
+                  <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                  <span>Registrar Ingreso o Gasto</span>
+                </h2>
+                <button type="button" id="btn-tx-cancel-edit" class="btn btn-secondary btn-sm" style="display: none;">
+                  <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                  <span>Cancelar Edicion</span>
+                </button>
+              </div>
+
+              <div id="tx-form-alert" style="display: none; margin-bottom: 12px;"></div>
+
+              <form id="form-transaccion" novalidate>
+                <input type="hidden" id="tx-id" value="" />
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="form-label" for="tx-tipo">Tipo de Operacion *</label>
+                    <select id="tx-tipo" name="tipo" class="form-control" required>
+                      <option value="GASTO">GASTO</option>
+                      <option value="INGRESO">INGRESO</option>
+                    </select>
+                    <span class="field-error" data-error-for="tipo"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="tx-naturaleza">Naturaleza *</label>
+                    <select id="tx-naturaleza" name="naturaleza" class="form-control" required>
+                      <option value="VARIABLE">Variable</option>
+                      <option value="FIJO">Fijo</option>
+                    </select>
+                    <span class="field-error" data-error-for="naturaleza"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="tx-monto">Monto (<span class="currency-unit-label">USD</span>) *</label>
+                    <input type="number" id="tx-monto" name="monto_centavos" class="form-control tabular-nums" step="0.01" min="0.01" placeholder="0.00" required />
+                    <span class="field-error" data-error-for="monto_centavos"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="tx-fecha">Fecha (YYYY-MM-DD) *</label>
+                    <input type="date" id="tx-fecha" name="fecha" class="form-control tabular-nums" required />
+                    <span class="field-error" data-error-for="fecha"></span>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label class="form-label" for="tx-categoria">Categoria Contable *</label>
+                    <select id="tx-categoria" name="categoria_id" class="form-control" required></select>
+                    <span class="field-error" data-error-for="categoria_id"></span>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label class="form-label" for="tx-descripcion">Descripcion (max. 200 caracteres) *</label>
+                    <input type="text" id="tx-descripcion" name="descripcion" class="form-control" maxlength="200" placeholder="Ej. Pago de factura electrica mensual" required />
+                    <span class="field-error" data-error-for="descripcion"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="tx-metodo-pago">Metodo de Pago *</label>
+                    <select id="tx-metodo-pago" name="metodo_pago" class="form-control" required>
+                      <option value="DEBITO">Tarjeta de debito</option>
+                      <option value="EFECTIVO">Efectivo</option>
+                      <option value="TRANSFERENCIA">Transferencia</option>
+                      <option value="CREDITO">Tarjeta de credito</option>
+                      <option value="OTRO">Otro</option>
+                    </select>
+                    <span class="field-error" data-error-for="metodo_pago"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="tx-comercio">Comercio / Entidad</label>
+                    <input type="text" id="tx-comercio" name="comercio" class="form-control" maxlength="120" placeholder="Opcional" />
+                    <span class="field-error" data-error-for="comercio"></span>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label class="form-label" for="tx-notas">Notas Adicionales (max. 1000 caracteres)</label>
+                    <textarea id="tx-notas" name="notas" class="form-control" maxlength="1000" rows="2" placeholder="Observaciones contables opcionales"></textarea>
+                    <span class="field-error" data-error-for="notas"></span>
+                  </div>
+
+                  <div class="form-group full-width" style="margin-top: 4px;">
+                    <button type="submit" id="btn-tx-submit" class="btn btn-primary" style="width: 100%;">
+                      <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                      <span id="btn-tx-submit-label">Guardar Transaccion</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Panel de Filtros y Tabla de Transacciones -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div class="card">
+                <div class="card-header">
+                  <h2 class="card-title">
+                    <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                    <span>Filtros de Consulta</span>
+                  </h2>
+                  <div style="display: flex; gap: 8px;">
+                    <button type="button" id="btn-tx-filter-clear" class="btn btn-secondary btn-sm">
+                      <i class="fa-solid fa-filter-circle-xmark" aria-hidden="true"></i>
+                      <span>Limpiar Filtros</span>
+                    </button>
+                    <button type="button" id="btn-tx-filter-apply" class="btn btn-primary btn-sm">
+                      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                      <span>Filtrar</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-grid-4">
+                  <div class="form-group">
+                    <label class="form-label" for="filter-tx-desde">Desde Fecha</label>
+                    <input type="date" id="filter-tx-desde" class="form-control tabular-nums" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="filter-tx-hasta">Hasta Fecha</label>
+                    <input type="date" id="filter-tx-hasta" class="form-control tabular-nums" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="filter-tx-tipo">Tipo</label>
+                    <select id="filter-tx-tipo" class="form-control">
+                      <option value="">Todos</option>
+                      <option value="INGRESO">INGRESO</option>
+                      <option value="GASTO">GASTO</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="filter-tx-naturaleza">Naturaleza</label>
+                    <select id="filter-tx-naturaleza" class="form-control">
+                      <option value="">Todas</option>
+                      <option value="FIJO">Fijo</option>
+                      <option value="VARIABLE">Variable</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="filter-tx-categoria">Categoria</label>
+                    <select id="filter-tx-categoria" class="form-control">
+                      <option value="">Todas las categorias</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="filter-tx-metodo">Metodo de Pago</label>
+                    <select id="filter-tx-metodo" class="form-control">
+                      <option value="">Todos</option>
+                      <option value="EFECTIVO">Efectivo</option>
+                      <option value="DEBITO">Tarjeta de debito</option>
+                      <option value="CREDITO">Tarjeta de credito</option>
+                      <option value="TRANSFERENCIA">Transferencia</option>
+                      <option value="OTRO">Otro</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="filter-tx-es-compra">Origen</label>
+                    <select id="filter-tx-es-compra" class="form-control">
+                      <option value="">Todos</option>
+                      <option value="false">Transaccion simple</option>
+                      <option value="true">Compra con articulos</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="filter-tx-buscar">Buscar Texto</label>
+                    <input type="text" id="filter-tx-buscar" class="form-control" maxlength="100" placeholder="Descripcion, comercio o nota" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <h2 class="card-title">
+                    <i class="fa-solid fa-table" aria-hidden="true"></i>
+                    <span>Listado de Transacciones</span>
+                  </h2>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <label class="form-label" for="filter-tx-por-pagina">Filas:</label>
+                    <select id="filter-tx-por-pagina" class="form-control" style="width: 80px; height: 30px;">
+                      <option value="25">25</option>
+                      <option value="50" selected>50</option>
+                      <option value="100">100</option>
+                      <option value="200">200</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Categoria</th>
+                        <th>Descripcion</th>
+                        <th>Comercio</th>
+                        <th>Naturaleza</th>
+                        <th>Pago</th>
+                        <th class="text-right">Monto</th>
+                        <th class="text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tx-table-tbody"></tbody>
+                  </table>
+                </div>
+
+                <div class="pagination-bar">
+                  <span id="tx-pagination-info">Mostrando 0 registros</span>
+                  <div class="pagination-controls">
+                    <button type="button" id="btn-tx-prev-page" class="btn btn-secondary btn-sm" disabled>
+                      <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                      <span>Anterior</span>
+                    </button>
+                    <span id="tx-page-indicator" class="tabular-nums">Pagina 1 de 1</span>
+                    <button type="button" id="btn-tx-next-page" class="btn btn-secondary btn-sm" disabled>
+                      <span>Siguiente</span>
+                      <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             3. PANTALLA: COMPRAS DETALLADAS (DESGLOSE DE ARTICULOS)
+             ========================================================= -->
+        <section id="view-compras" class="view-section" aria-labelledby="title-compras">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 id="title-compras" class="page-title">
+                <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
+                <span>Registro de Compras Detalladas por Factura</span>
+              </h1>
+              <p class="page-subtitle">Desglose de multiples articulos por compra con calculo automatico de subtotales y total en centavos</p>
+            </div>
+            <div class="page-actions">
+              <button type="button" id="btn-compras-reload" class="btn btn-secondary">
+                <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                <span>Recargar Historial</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Formulario de Factura / Compra con Tabla Dinamica de Articulos -->
+          <div class="card">
+            <div class="card-header">
+              <h2 id="compra-form-title" class="card-title">
+                <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+                <span>Nueva Factura / Compra con Desglose de Articulos</span>
+              </h2>
+              <button type="button" id="btn-compra-cancel-edit" class="btn btn-secondary btn-sm" style="display: none;">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                <span>Cancelar Edicion</span>
+              </button>
+            </div>
+
+            <div id="compra-form-alert" style="display: none; margin-bottom: 12px;"></div>
+
+            <form id="form-compra" novalidate>
+              <input type="hidden" id="compra-id" value="" />
+              <div class="form-grid-4" style="margin-bottom: 16px;">
+                <div class="form-group">
+                  <label class="form-label" for="compra-fecha">Fecha de Compra *</label>
+                  <input type="date" id="compra-fecha" name="fecha" class="form-control tabular-nums" required />
+                  <span class="field-error" data-error-for="fecha"></span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="compra-comercio">Comercio / Proveedor *</label>
+                  <input type="text" id="compra-comercio" name="comercio" class="form-control" maxlength="120" placeholder="Ej. Supermaxi" required />
+                  <span class="field-error" data-error-for="comercio"></span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="compra-categoria">Categoria de Gasto *</label>
+                  <select id="compra-categoria" name="categoria_id" class="form-control" required></select>
+                  <span class="field-error" data-error-for="categoria_id"></span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="compra-metodo-pago">Metodo de Pago *</label>
+                  <select id="compra-metodo-pago" name="metodo_pago" class="form-control" required>
+                    <option value="DEBITO">Tarjeta de debito</option>
+                    <option value="EFECTIVO">Efectivo</option>
+                    <option value="CREDITO">Tarjeta de credito</option>
+                    <option value="TRANSFERENCIA">Transferencia</option>
+                    <option value="OTRO">Otro</option>
+                  </select>
+                  <span class="field-error" data-error-for="metodo_pago"></span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="compra-naturaleza">Naturaleza</label>
+                  <select id="compra-naturaleza" name="naturaleza" class="form-control">
+                    <option value="VARIABLE" selected>Variable</option>
+                    <option value="FIJO">Fijo</option>
+                  </select>
+                  <span class="field-error" data-error-for="naturaleza"></span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="compra-descripcion">Descripcion General</label>
+                  <input type="text" id="compra-descripcion" name="descripcion" class="form-control" maxlength="200" placeholder="Opcional (ej. Compra semanal)" />
+                  <span class="field-error" data-error-for="descripcion"></span>
+                </div>
+
+                <div class="form-group" style="grid-column: span 2;">
+                  <label class="form-label" for="compra-notas">Notas de la Factura</label>
+                  <input type="text" id="compra-notas" name="notas" class="form-control" maxlength="1000" placeholder="Numero de comprobante u observaciones opcionales" />
+                  <span class="field-error" data-error-for="notas"></span>
+                </div>
+              </div>
+
+              <!-- Tabla Dinamica de Articulos -->
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <span class="form-label" style="font-size: 14px; color: var(--color-primario);">
+                  <i class="fa-solid fa-list-check" aria-hidden="true"></i>
+                  <span>Desglose de Articulos de la Factura (1 a 200 items)</span>
+                </span>
+                <button type="button" id="btn-compra-add-item" class="btn btn-secondary btn-sm">
+                  <i class="fa-solid fa-square-plus" aria-hidden="true"></i>
+                  <span>Agregar Articulo</span>
+                </button>
+              </div>
+              <span class="field-error" data-error-for="articulos" style="margin-bottom: 6px;"></span>
+
+              <div class="table-responsive" style="margin-bottom: 16px;">
+                <table class="data-table" id="compra-items-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 50px;">#</th>
+                      <th>Nombre del Articulo *</th>
+                      <th style="width: 140px;" class="text-right">Cantidad *</th>
+                      <th style="width: 140px;">Unidad</th>
+                      <th style="width: 170px;" class="text-right">Precio Unitario (<span class="currency-unit-label">USD</span>) *</th>
+                      <th style="width: 170px;" class="text-right">Subtotal Calculado</th>
+                      <th style="width: 80px;" class="text-center">Quitar</th>
+                    </tr>
+                  </thead>
+                  <tbody id="compra-items-tbody"></tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="2">TOTAL DE LA FACTURA (<span id="compra-total-items-count">0</span> articulos)</td>
+                      <td colspan="3" class="text-right">Importe Total Calculado:</td>
+                      <td id="compra-total-preview" class="text-right tabular-nums amount-gasto">USD 0.00</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" id="btn-compra-clear" class="btn btn-secondary">
+                  <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                  <span>Limpiar Formulario</span>
+                </button>
+                <button type="submit" id="btn-compra-submit" class="btn btn-primary">
+                  <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                  <span id="btn-compra-submit-label">Registrar Compra Detallada</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Filtros e Historial de Compras -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+                <span>Historial de Compras Detalladas</span>
+              </h2>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" id="btn-compras-filter-clear" class="btn btn-secondary btn-sm">
+                  <i class="fa-solid fa-filter-circle-xmark" aria-hidden="true"></i>
+                  <span>Limpiar</span>
+                </button>
+                <button type="button" id="btn-compras-filter-apply" class="btn btn-primary btn-sm">
+                  <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                  <span>Buscar Compras</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-grid-4" style="margin-bottom: 16px;">
+              <div class="form-group">
+                <label class="form-label" for="filter-compra-desde">Desde Fecha</label>
+                <input type="date" id="filter-compra-desde" class="form-control tabular-nums" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="filter-compra-hasta">Hasta Fecha</label>
+                <input type="date" id="filter-compra-hasta" class="form-control tabular-nums" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="filter-compra-articulo">Contiene Articulo</label>
+                <input type="text" id="filter-compra-articulo" class="form-control" maxlength="100" placeholder="Ej. Leche, Arroz, Detergente" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="filter-compra-buscar">Comercio / Descripcion</label>
+                <input type="text" id="filter-compra-buscar" class="form-control" maxlength="100" placeholder="Ej. Supermaxi" />
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Fecha</th>
+                    <th>Comercio</th>
+                    <th>Categoria</th>
+                    <th>Descripcion</th>
+                    <th class="text-center">Articulos</th>
+                    <th>Metodo de Pago</th>
+                    <th class="text-right">Monto Total</th>
+                    <th class="text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="compras-table-tbody"></tbody>
+              </table>
+            </div>
+
+            <div class="pagination-bar">
+              <span id="compras-pagination-info">Mostrando 0 compras</span>
+              <div class="pagination-controls">
+                <button type="button" id="btn-compras-prev-page" class="btn btn-secondary btn-sm" disabled>
+                  <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                  <span>Anterior</span>
+                </button>
+                <span id="compras-page-indicator" class="tabular-nums">Pagina 1 de 1</span>
+                <button type="button" id="btn-compras-next-page" class="btn btn-secondary btn-sm" disabled>
+                  <span>Siguiente</span>
+                  <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             4. PANTALLA: GESTOR DE PRESUPUESTOS MENSUALES
+             ========================================================= -->
+        <section id="view-presupuestos" class="view-section" aria-labelledby="title-presupuestos">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 id="title-presupuestos" class="page-title">
+                <i class="fa-solid fa-wallet" aria-hidden="true"></i>
+                <span>Gestor de Presupuestos Mensuales</span>
+              </h1>
+              <p class="page-subtitle">Control de limites de gasto por categoria, seguimiento porcentual y alertas de sobregiro</p>
+            </div>
+            <div class="page-actions">
+              <div class="period-selector">
+                <button type="button" id="pres-prev-month" class="btn btn-secondary btn-icon-only" aria-label="Mes anterior">
+                  <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <select id="pres-select-mes" class="form-control" style="width: 130px; height: 32px;" aria-label="Seleccionar mes"></select>
+                <input type="number" id="pres-input-anio" class="form-control tabular-nums" style="width: 88px; height: 32px;" min="2000" max="2100" aria-label="Seleccionar anio" />
+                <button type="button" id="pres-next-month" class="btn btn-secondary btn-icon-only" aria-label="Mes siguiente">
+                  <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
+              </div>
+              <select id="pres-filter-estado" class="form-control" style="width: 170px;" aria-label="Filtrar por estado">
+                <option value="">Todos los estados</option>
+                <option value="NORMAL">NORMAL (&lt; 80 %)</option>
+                <option value="ADVERTENCIA">ADVERTENCIA (80-99 %)</option>
+                <option value="EXCEDIDO">EXCEDIDO (&gt;= 100 %)</option>
+              </select>
+              <button type="button" id="btn-pres-reload" class="btn btn-secondary">
+                <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                <span>Actualizar</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- KPIs de Presupuesto Global -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>LIMITE TOTAL PRESUPUESTADO</span>
+                <span class="kpi-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span>
+              </div>
+              <div id="pres-kpi-limite" class="kpi-value amount-neutro">USD 0.00</div>
+              <div class="kpi-meta"><span>Periodo seleccionado</span></div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>TOTAL EJECUTADO (GASTADO)</span>
+                <span class="kpi-icon"><i class="fa-solid fa-arrow-trend-down" aria-hidden="true"></i></span>
+              </div>
+              <div id="pres-kpi-gastado" class="kpi-value amount-gasto">- 0.00</div>
+              <div class="kpi-meta"><span>Suma de gastos en categorias presupuestadas</span></div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>SALDO DISPONIBLE</span>
+                <span class="kpi-icon"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></span>
+              </div>
+              <div id="pres-kpi-disponible" class="kpi-value amount-balance-pos">0.00</div>
+              <div class="kpi-meta"><span>Margen restante del mes</span></div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>EJECUCION GLOBAL</span>
+                <span class="kpi-icon"><i class="fa-solid fa-gauge-high" aria-hidden="true"></i></span>
+              </div>
+              <div id="pres-kpi-porcentaje" class="kpi-value amount-neutro">0.00 %</div>
+              <div class="progress-track">
+                <div id="pres-global-bar" class="progress-fill estado-NORMAL" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-sidebar-layout">
+            <!-- Formulario de Presupuesto -->
+            <div class="card">
+              <div class="card-header">
+                <h2 id="pres-form-title" class="card-title">
+                  <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                  <span>Asignar Presupuesto Mensual</span>
+                </h2>
+                <button type="button" id="btn-pres-cancel-edit" class="btn btn-secondary btn-sm" style="display: none;">
+                  <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                  <span>Cancelar</span>
+                </button>
+              </div>
+
+              <div id="pres-form-alert" style="display: none; margin-bottom: 12px;"></div>
+
+              <form id="form-presupuesto" novalidate>
+                <input type="hidden" id="pres-id" value="" />
+                <div class="form-grid">
+                  <div class="form-group full-width">
+                    <label class="form-label" for="pres-categoria">Categoria de Gasto *</label>
+                    <select id="pres-categoria" name="categoria_id" class="form-control" required></select>
+                    <span class="field-error" data-error-for="categoria_id"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="pres-anio">Anio *</label>
+                    <input type="number" id="pres-anio" name="anio" class="form-control tabular-nums" min="2000" max="2100" required />
+                    <span class="field-error" data-error-for="anio"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="pres-mes">Mes *</label>
+                    <select id="pres-mes" name="mes" class="form-control" required></select>
+                    <span class="field-error" data-error-for="mes"></span>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label class="form-label" for="pres-monto-limite">Monto Limite Mensual (<span class="currency-unit-label">USD</span>) *</label>
+                    <input type="number" id="pres-monto-limite" name="monto_limite_centavos" class="form-control tabular-nums" step="0.01" min="0.01" placeholder="0.00" required />
+                    <span class="field-error" data-error-for="monto_limite_centavos"></span>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label class="form-label" for="pres-notas">Notas / Criterio Presupuestario</label>
+                    <textarea id="pres-notas" name="notas" class="form-control" maxlength="1000" rows="2" placeholder="Opcional"></textarea>
+                    <span class="field-error" data-error-for="notas"></span>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <button type="submit" id="btn-pres-submit" class="btn btn-primary" style="width: 100%;">
+                      <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                      <span id="btn-pres-submit-label">Guardar Presupuesto</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Tabla de Presupuestos por Categoria -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">
+                  <i class="fa-solid fa-table" aria-hidden="true"></i>
+                  <span>Ejecucion Presupuestaria por Categoria</span>
+                </h2>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Categoria</th>
+                      <th>Estado</th>
+                      <th style="min-width: 180px;">Progreso y Porcentaje</th>
+                      <th class="text-right">Limite</th>
+                      <th class="text-right">Gastado</th>
+                      <th class="text-right">Disponible</th>
+                      <th class="text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pres-table-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             5. PANTALLA: CATEGORIAS CONTABLES
+             ========================================================= -->
+        <section id="view-categorias" class="view-section" aria-labelledby="title-categorias">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 id="title-categorias" class="page-title">
+                <i class="fa-solid fa-tags" aria-hidden="true"></i>
+                <span>Plan de Categorias Contables</span>
+              </h1>
+              <p class="page-subtitle">Administracion de categorias de ingresos y gastos, iconografia FontAwesome 6 y estado de actividad</p>
+            </div>
+            <div class="page-actions">
+              <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+                <input type="checkbox" id="cat-filter-inactivas" checked />
+                <span>Incluir categorias inactivas</span>
+              </label>
+              <button type="button" id="btn-cat-reload" class="btn btn-secondary">
+                <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                <span>Actualizar</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid-sidebar-layout">
+            <!-- Formulario de Categoria -->
+            <div class="card">
+              <div class="card-header">
+                <h2 id="cat-form-title" class="card-title">
+                  <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                  <span>Nueva Categoria</span>
+                </h2>
+                <button type="button" id="btn-cat-cancel-edit" class="btn btn-secondary btn-sm" style="display: none;">
+                  <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                  <span>Cancelar</span>
+                </button>
+              </div>
+
+              <div id="cat-form-alert" style="display: none; margin-bottom: 12px;"></div>
+
+              <form id="form-categoria" novalidate>
+                <input type="hidden" id="cat-id" value="" />
+                <div class="form-grid">
+                  <div class="form-group full-width">
+                    <label class="form-label" for="cat-nombre">Nombre de la Categoria (max. 60 caracteres) *</label>
+                    <input type="text" id="cat-nombre" name="nombre" class="form-control" maxlength="60" placeholder="Ej. Gimnasio" required />
+                    <span class="field-error" data-error-for="nombre"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="cat-tipo">Tipo *</label>
+                    <select id="cat-tipo" name="tipo" class="form-control" required>
+                      <option value="GASTO">GASTO</option>
+                      <option value="INGRESO">INGRESO</option>
+                    </select>
+                    <span class="field-error" data-error-for="tipo"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="cat-color">Color Institucional *</label>
+                    <select id="cat-color" name="color" class="form-control" required></select>
+                    <span class="field-error" data-error-for="color"></span>
+                  </div>
+
+                  <div class="form-group full-width" id="cat-activa-group" style="display: none;">
+                    <label class="form-label" for="cat-activa">Estado de la Categoria</label>
+                    <select id="cat-activa" name="activa" class="form-control">
+                      <option value="true">Activa (Disponible para nuevas operaciones)</option>
+                      <option value="false">Inactiva (Archivada)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label class="form-label">Icono FontAwesome 6 Seleccionado: <code id="cat-icono-preview-text">fa-solid fa-tag</code></label>
+                    <input type="hidden" id="cat-icono" name="icono" value="fa-solid fa-tag" />
+                    <div id="cat-icon-selector" class="icon-selector-grid" role="listbox" aria-label="Selector de icono FontAwesome"></div>
+                    <span class="field-error" data-error-for="icono"></span>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <button type="submit" id="btn-cat-submit" class="btn btn-primary" style="width: 100%;">
+                      <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                      <span id="btn-cat-submit-label">Crear Categoria</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Tablas Agrupadas por Tipo (INGRESO y GASTO) -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div class="card">
+                <div class="card-header">
+                  <h2 class="card-title">
+                    <i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
+                    <span>Categorias de INGRESO</span>
+                  </h2>
+                </div>
+                <div class="table-responsive">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Categoria</th>
+                        <th>Clase FontAwesome</th>
+                        <th>Color</th>
+                        <th>Estado</th>
+                        <th class="text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="cat-ingresos-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <h2 class="card-title">
+                    <i class="fa-solid fa-arrow-trend-down" aria-hidden="true"></i>
+                    <span>Categorias de GASTO</span>
+                  </h2>
+                </div>
+                <div class="table-responsive">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Categoria</th>
+                        <th>Clase FontAwesome</th>
+                        <th>Color</th>
+                        <th>Estado</th>
+                        <th class="text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="cat-gastos-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             6. PANTALLA: ASESOR FINANCIERO IA (GEMINI)
+             ========================================================= -->
+        <section id="view-ia" class="view-section" aria-labelledby="title-ia">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 id="title-ia" class="page-title">
+                <i class="fa-solid fa-robot" aria-hidden="true"></i>
+                <span>Asesor Financiero IA (Gemini)</span>
+              </h1>
+              <p class="page-subtitle">Auditoria financiera mensual conectada al motor Gemini del VPS e ingreso asistido de compras en texto libre</p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- Panel 1: Auditoria del Mes y Consultoria (POST /ai/analyze) -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">
+                  <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                  <span>Solicitar Auditoria Financiera a Gemini</span>
+                </h2>
+              </div>
+
+              <div id="ia-form-alert" style="display: none; margin-bottom: 12px;"></div>
+
+              <form id="form-ia-analyze" novalidate>
+                <div class="form-grid">
+                  <div class="form-group full-width">
+                    <label class="form-label" for="ia-tipo-analisis">Modalidad de Auditoria *</label>
+                    <select id="ia-tipo-analisis" name="tipo_analisis" class="form-control" required>
+                      <option value="RESUMEN_MENSUAL">RESUMEN_MENSUAL - Auditoria ejecutiva integral del mes</option>
+                      <option value="PRESUPUESTO">PRESUPUESTO - Evaluacion de desviaciones presupuestarias</option>
+                      <option value="AHORRO">AHORRO - Plan de reduccion de gastos y optimizacion</option>
+                      <option value="PREGUNTA_LIBRE">PREGUNTA_LIBRE - Consulta especifica al asesor financiero</option>
+                    </select>
+                    <span class="field-error" data-error-for="tipo_analisis"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="ia-anio">Anio a Auditar *</label>
+                    <input type="number" id="ia-anio" name="anio" class="form-control tabular-nums" min="2000" max="2100" required />
+                    <span class="field-error" data-error-for="anio"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="ia-mes">Mes a Auditar *</label>
+                    <select id="ia-mes" name="mes" class="form-control" required></select>
+                    <span class="field-error" data-error-for="mes"></span>
+                  </div>
+
+                  <div class="form-group full-width" id="ia-pregunta-group" style="display: none;">
+                    <label class="form-label" for="ia-pregunta">Pregunta o Consulta al Asesor IA (5 a 500 caracteres) *</label>
+                    <textarea id="ia-pregunta" name="pregunta" class="form-control" maxlength="500" rows="3" placeholder="Ej. En que categorias puedo recortar gastos este mes para alcanzar un 25 por ciento de ahorro?"></textarea>
+                    <span class="field-error" data-error-for="pregunta"></span>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <button type="submit" id="btn-ia-submit" class="btn btn-primary" style="width: 100%;">
+                      <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                      <span id="btn-ia-submit-label">Generar Dictamen Financiero IA</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              <!-- Resultado del Analisis IA -->
+              <div id="ia-result-container" style="margin-top: 16px; display: none;">
+                <div class="health-score-box" style="margin-bottom: 12px;">
+                  <div class="health-score-number" id="ia-score-value">0 / 100</div>
+                  <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                      <strong style="color: var(--color-primario);">
+                        <i class="fa-solid fa-gauge-high" aria-hidden="true"></i>
+                        <span>Puntuacion de Salud Financiera</span>
+                      </strong>
+                      <span id="ia-meta-info" class="form-help tabular-nums"></span>
+                    </div>
+                    <div class="progress-track">
+                      <div id="ia-score-bar" class="progress-fill estado-NORMAL" style="width: 0%;"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card" style="background-color: var(--color-fondo); margin-bottom: 12px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <strong style="color: var(--color-primario);">
+                      <i class="fa-solid fa-file-lines" aria-hidden="true"></i>
+                      <span>Resumen Ejecutivo del Auditor IA</span>
+                    </strong>
+                    <button type="button" id="btn-ia-copy-summary" class="btn btn-secondary btn-sm">
+                      <i class="fa-solid fa-copy" aria-hidden="true"></i>
+                      <span>Copiar Resumen</span>
+                    </button>
+                  </div>
+                  <p id="ia-resumen-text" style="white-space: pre-line;"></p>
+                </div>
+
+                <div id="ia-alertas-section" style="margin-bottom: 12px;">
+                  <h3 style="font-size: 14px; font-weight: 600; color: var(--color-primario); margin-bottom: 8px;">
+                    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                    <span>Alertas Detectadas</span>
+                  </h3>
+                  <div id="ia-alertas-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+
+                <div id="ia-recomendaciones-section">
+                  <h3 style="font-size: 14px; font-weight: 600; color: var(--color-primario); margin-bottom: 8px;">
+                    <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>
+                    <span>Recomendaciones y Plan de Accion</span>
+                  </h3>
+                  <div id="ia-recomendaciones-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel 2: Ingreso de Compras Dictadas en Texto Libre -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">
+                  <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+                  <span>Ingreso de Compras Dictadas en Texto Libre</span>
+                </h2>
+              </div>
+
+              <p class="form-help" style="margin-bottom: 12px;">
+                Escriba o dicte una compra en lenguaje natural indicando comercio, metodo de pago y los articulos con su cantidad, unidad y precio unitario. El asistente estructurara automaticamente la factura para registrarla en el servidor o auditarla con Gemini.
+              </p>
+
+              <div id="dictado-alert" style="display: none; margin-bottom: 12px;"></div>
+
+              <div class="form-grid" style="margin-bottom: 12px;">
+                <div class="form-group full-width">
+                  <label class="form-label" for="dictado-texto">Texto Libre de la Compra *</label>
+                  <textarea id="dictado-texto" class="form-control" rows="4" maxlength="1000" placeholder="Ejemplo: Compra en Supermaxi con tarjeta de debito: 2 Leche entera 1L a 1.25, 1.5 kg Carne molida a 8.50, 1 paquete Detergente a 30.50"></textarea>
+                  <span class="field-error" id="dictado-texto-error"></span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="dictado-comercio">Comercio Detectado / Editable *</label>
+                  <input type="text" id="dictado-comercio" class="form-control" maxlength="120" value="Supermaxi" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="dictado-fecha">Fecha de Compra *</label>
+                  <input type="date" id="dictado-fecha" class="form-control tabular-nums" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="dictado-categoria">Categoria de Gasto *</label>
+                  <select id="dictado-categoria" class="form-control"></select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="dictado-metodo">Metodo de Pago *</label>
+                  <select id="dictado-metodo" class="form-control">
+                    <option value="DEBITO">Tarjeta de debito</option>
+                    <option value="EFECTIVO">Efectivo</option>
+                    <option value="CREDITO">Tarjeta de credito</option>
+                    <option value="TRANSFERENCIA">Transferencia</option>
+                    <option value="OTRO">Otro</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                <button type="button" id="btn-dictado-parse" class="btn btn-secondary">
+                  <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                  <span>Interpretar Texto Libre</span>
+                </button>
+                <button type="button" id="btn-dictado-ejemplo" class="btn btn-secondary btn-sm">
+                  <i class="fa-solid fa-file-import" aria-hidden="true"></i>
+                  <span>Cargar Ejemplo</span>
+                </button>
+                <button type="button" id="btn-dictado-auditar-ia" class="btn btn-secondary btn-sm">
+                  <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                  <span>Consultar Impacto con Gemini</span>
+                </button>
+              </div>
+
+              <div class="table-responsive" style="margin-bottom: 12px;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Articulo Detectado</th>
+                      <th class="text-right">Cant.</th>
+                      <th>Unidad</th>
+                      <th class="text-right">P. Unitario</th>
+                      <th class="text-right">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dictado-preview-tbody">
+                    <tr>
+                      <td colspan="6" class="text-center" style="color: var(--color-texto-secundario);">
+                        Escriba el texto de su compra y pulse "Interpretar Texto Libre".
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="5" class="text-right">Total Interpretado:</td>
+                      <td id="dictado-preview-total" class="text-right tabular-nums amount-gasto">USD 0.00</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" id="btn-dictado-open-editor" class="btn btn-secondary" disabled>
+                  <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                  <span>Abrir en Editor de Compras</span>
+                </button>
+                <button type="button" id="btn-dictado-save" class="btn btn-primary" disabled>
+                  <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                  <span>Registrar Compra en Servidor</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================
+             7. PANTALLA: CONFIGURACION Y CONEXION AL SERVIDOR
+             ========================================================= -->
+        <section id="view-configuracion" class="view-section" aria-labelledby="title-configuracion">
+          <div class="page-header">
+            <div class="page-title-group">
+              <h1 id="title-configuracion" class="page-title">
+                <i class="fa-solid fa-gear" aria-hidden="true"></i>
+                <span>Configuracion del Cliente y Estado de Conexion</span>
+              </h1>
+              <p class="page-subtitle">Parametros de conexion al servidor VPS, autenticacion por token privado y diagnostico de salud</p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- Parametros de Conexion Editables -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">
+                  <i class="fa-solid fa-server" aria-hidden="true"></i>
+                  <span>Parametros del Servidor Remoto (VPS)</span>
+                </h2>
+              </div>
+
+              <div id="cfg-alert" style="display: none; margin-bottom: 12px;"></div>
+
+              <form id="form-configuracion" novalidate>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="form-label" for="cfg-host">Direccion IP / Host del Servidor *</label>
+                    <input type="text" id="cfg-host" class="form-control tabular-nums" value="51.161.47.99" required />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="cfg-puerto">Puerto TCP *</label>
+                    <input type="number" id="cfg-puerto" class="form-control tabular-nums" value="54892" min="1" max="65535" required />
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label class="form-label" for="cfg-url-preview">URL Base de la API (Generada)</label>
+                    <input type="text" id="cfg-url-preview" class="form-control tabular-nums" value="http://51.161.47.99:54892/api/v1" readonly />
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label class="form-label" for="cfg-token">
+                      <i class="fa-solid fa-key" aria-hidden="true"></i>
+                      <span>Header <code>X-App-Private-Token</code> (32 caracteres alfanumericos) *</span>
+                    </label>
+                    <div style="display: flex; gap: 8px;">
+                      <input type="password" id="cfg-token" class="form-control tabular-nums" value="SZ6ydSFNmkAbrFLLrRahSEVxGnLkvABw" required />
+                      <button type="button" id="btn-cfg-toggle-token" class="btn btn-secondary btn-icon-only" aria-label="Mostrar u ocultar token" title="Mostrar u ocultar token">
+                        <i id="icon-cfg-toggle-token" class="fa-solid fa-eye" aria-hidden="true"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="form-group full-width" style="display: flex; flex-direction: row; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+                    <button type="button" id="btn-cfg-reset" class="btn btn-secondary">
+                      <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+                      <span>Restaurar por Defecto</span>
+                    </button>
+                    <button type="button" id="btn-cfg-test" class="btn btn-secondary">
+                      <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i>
+                      <span>Probar Conexion</span>
+                    </button>
+                    <button type="submit" id="btn-cfg-save" class="btn btn-primary">
+                      <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                      <span>Guardar Configuracion</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Estado del Servidor (GET /health) e Informacion Tecnica -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">
+                  <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                  <span>Diagnostico del Servidor y Aplicacion</span>
+                </h2>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table">
+                  <tbody>
+                    <tr>
+                      <td><strong>Estado del Servidor (<code>GET /health</code>)</strong></td>
+                      <td id="diag-estado" class="text-right">Pendiente de verificacion</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Autenticacion (<code>X-App-Private-Token</code>)</strong></td>
+                      <td id="diag-auth" class="text-right">Pendiente</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Version del Contrato API</strong></td>
+                      <td id="diag-version-api" class="text-right tabular-nums">1.0.0</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Moneda Oficial del Sistema</strong></td>
+                      <td id="diag-moneda" class="text-right tabular-nums">USD</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Hora UTC del Servidor</strong></td>
+                      <td id="diag-hora-servidor" class="text-right tabular-nums">-</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Timeout Peticiones Generales</strong></td>
+                      <td class="text-right tabular-nums">15 segundos</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Timeout Modulo IA (Gemini)</strong></td>
+                      <td class="text-right tabular-nums">90 segundos</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Version de la Aplicacion PC</strong></td>
+                      <td class="text-right tabular-nums">1.0.0 (Cliente Ligero Node.js)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODAL 1: CONFIRMACION DESTRUCTIVA (UI_DESIGN.md 7)
+       ========================================================= -->
+  <div id="modal-confirm" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-confirm-title">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3 id="modal-confirm-title" class="modal-title">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <span>Confirmar Eliminacion</span>
+        </h3>
+        <button type="button" id="btn-modal-confirm-close" class="modal-close-btn" aria-label="Cerrar dialogo">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p id="modal-confirm-message">Esta accion no se puede deshacer. Desea eliminar esta transaccion?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-modal-confirm-cancel" class="btn btn-secondary">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          <span>Cancelar</span>
+        </button>
+        <button type="button" id="btn-modal-confirm-accept" class="btn btn-danger">
+          <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+          <span>Eliminar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODAL 2: DETALLE DE COMPRA TIPO TICKET (GET /compras/{id})
+       ========================================================= -->
+  <div id="modal-ticket" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-ticket-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-ticket-title" class="modal-title">
+          <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+          <span>Desglose de Factura / Compra</span>
+        </h3>
+        <button type="button" id="btn-modal-ticket-close" class="modal-close-btn" aria-label="Cerrar desglose">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-ticket-header" class="receipt-header"></div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Articulo</th>
+                <th class="text-right">Cantidad</th>
+                <th>Unidad</th>
+                <th class="text-right">Precio Unitario</th>
+                <th class="text-right">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody id="modal-ticket-tbody"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="5" class="text-right">MONTO TOTAL DE LA COMPRA:</td>
+                <td id="modal-ticket-total" class="text-right tabular-nums amount-gasto">USD 0.00</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-modal-ticket-print" class="btn btn-secondary">
+          <i class="fa-solid fa-print" aria-hidden="true"></i>
+          <span>Imprimir Comprobante</span>
+        </button>
+        <button type="button" id="btn-modal-ticket-edit" class="btn btn-primary">
+          <i class="fa-solid fa-pen" aria-hidden="true"></i>
+          <span>Editar Compra</span>
+        </button>
+        <button type="button" id="btn-modal-ticket-close-footer" class="btn btn-secondary">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          <span>Cerrar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js CDN (Especificacion PC) con respaldo local automatico -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+  <script>
+    if (typeof window.Chart === 'undefined') {
+      document.write('<script src="vendor/chart.umd.min.js"><\/script>');
+    }
+  </script>
+  <!-- Scripts del Cliente PC -->
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

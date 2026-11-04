@@ -1,0 +1,47 @@
+name: Compilar APK Android (Cero Disco Local)
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+      - "fix/**"
+      - "refactor/**"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: Build Debug APK (Java Puro)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Compilar APK con Gradle (--no-daemon)
+        run: |
+          if [ -d "android-app" ]; then
+            cd android-app
+          fi
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon --no-build-cache --console=plain
+
+      - name: Publicar artefacto APK listo para instalar
+        uses: actions/upload-artifact@v4
+        with:
+          name: FinanzasPersonales-debug-apk
+          path: |
+            android-app/app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30

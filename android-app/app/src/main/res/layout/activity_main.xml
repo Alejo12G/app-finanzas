@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/color_fondo"
+    android:orientation="vertical">
+
+    <!-- Barra superior azul marino (#1B2A4A) -->
+    <LinearLayout
+        android:id="@+id/topAppBar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/color_primario"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="@dimen/space_16"
+        android:paddingRight="@dimen/space_16">
+
+        <TextView
+            android:id="@+id/tvAppLogoIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="@dimen/space_8"
+            android:contentDescription="@null"
+            android:textColor="@color/color_texto_invertido"
+            android:textSize="18sp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvScreenTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/nav_dashboard"
+                android:textColor="@color/color_texto_invertido"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvSubtitleCurrency"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Moneda: USD"
+                android:textColor="@color/color_primario_suave"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/btnQuickAiTop"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginRight="4dp"
+            android:background="@drawable/bg_button_primary"
+            android:contentDescription="Registro rapido IA"
+            android:gravity="center"
+            android:textColor="@color/color_texto_invertido"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/btnRefreshTop"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_button_primary"
+            android:contentDescription="Recargar datos"
+            android:gravity="center"
+            android:textColor="@color/color_texto_invertido"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- Banner de bloqueo 401 o estado global -->
+    <LinearLayout
+        android:id="@+id/bannerGlobalStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/color_peligro_suave"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="@dimen/space_8"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvBannerGlobalIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="@dimen/space_8"
+            android:textColor="@color/color_peligro"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tvBannerGlobalText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/color_peligro"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnBannerRetry"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:background="@drawable/bg_button_secondary"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:text="@string/btn_reintentar"
+            android:textAllCaps="false"
+            android:textColor="@color/color_secundario"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Indicador de progreso nativo (#1B2A4A) -->
+    <ProgressBar
+        android:id="@+id/progressBarGlobal"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:indeterminate="true"
+        android:indeterminateTint="@color/color_primario"
+        android:visibility="gone" />
+
+    <!-- Contenedor principal de pantallas -->
+    <FrameLayout
+        android:id="@+id/contentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Separador -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/color_borde" />
+
+    <!-- Barra de navegacion inferior deslizable horizontalmente para las 7 secciones de UI_DESIGN.md 5.1 -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@color/color_superficie"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/bottomNavContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal" />
+    </HorizontalScrollView>
+
+</LinearLayout>

@@ -1,0 +1,181 @@
+'use strict';
+
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const http = require('http');
+const { execFileSync } = require('child_process');
+
+const { loadConfig, DEFAULT_CONFIG } = require('../src/config');
+const { startLocalServer } = require('../src/server');
+
+// Cargamos modulos de cliente en el contexto global para pruebas unitarias
+global.window = global;
+require('../public/js/config.js');
+require('../public/js/utils.js');
+require('../public/js/api.js');
+
+const EMOJI_REGEX = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}\u{1F1E6}-\u{1F1FF}]/u;
+
+function walkFiles(dir, result = []) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      walkFiles(full, result);
+    } else {
+      result.push(full);
+    }
+  }
+  return result;
+}
+
+async function runTests() {
+  console.log('[TEST] 1. Validando sintaxis de todos los archivos JS...');
+  const pcAppRoot = path.join(__dirname, '..');
+  const allFiles = walkFiles(pcAppRoot);
+  const jsFiles = allFiles.filter((f) => f.endsWith('.js') && !f.endsWith('.min.js'));
+
+  for (const jsFile of jsFiles) {
+    execFileSync(process.execPath, ['--check', jsFile]);
+  }
+  console.log(`[OK] ${jsFiles.length} archivos JS validados sin errores sintacticos.`);
+
+  console.log('[TEST] 2. Validando regla CERO EMOJIS en toda la carpeta /pc-app...');
+  const textExtensions = new Set(['.js', '.html', '.css', '.json', '.md', '.bat']);
+  for (const file of allFiles) {
+    const ext = path.extname(file).toLowerCase();
+    if (textExtensions.has(ext)) {
+      const content = fs.readFileSync(file, 'utf8');
+      assert.strictEqual(
+        EMOJI_REGEX.test(content),
+        false,
+        `Se encontro un emoji prohibido en el archivo: ${file}`
+      );
+    }
+  }
+  console.log('[OK] Cero emojis detectados en todos los archivos de /pc-app.');
+
+  console.log('[TEST] 3. Validando configuracion por defecto (API_CONTRACT.md seccion 1)...');
+  const cfg = loadConfig();
+  assert.strictEqual(cfg.host, '51.161.47.99');
+  assert.strictEqual(cfg.puerto, 54892);
+  assert.strictEqual(cfg.url_base, 'http://51.161.47.99:54892/api/v1');
+  assert.strictEqual(cfg.header_token, 'X-App-Private-Token');
+  assert.strictEqual(cfg.token_privado, 'SZ6ydSFNmkAbrFLLrRahSEVxGnLkvABw');
+  assert.strictEqual(cfg.token_privado.length, 32);
+  assert.strictEqual(cfg.timeout_general_ms, 15000);
+  assert.strictEqual(cfg.timeout_ia_ms, 90000);
+  console.log('[OK] Configuracion preestablecida verificada.');
+
+  console.log('[TEST] 4. Validando aritmetica de centavos y redondeo mitad hacia arriba (API_CONTRACT.md 4.3 y 6.5)...');
+  const { calcSubtotalCentavos, parseDecimalToCentavos, formatCentavos, containsEmoji } = global.AppUtils;
+  assert.strictEqual(parseDecimalToCentavos('12.50'), 1250);
+  assert.strictEqual(parseDecimalToCentavos('19.99'), 1999);
+  assert.strictEqual(parseDecimalToCentavos('650'), 65000);
+
+  // Caso canonico 6.5 del contrato:
+  // Leche: 2 * 125 = 250; Carne: 1.5 * 850 = 1275; Detergente: 1 * 3050 = 3050; Total = 4575
+  const sub1 = calcSubtotalCentavos(2, 125);
+  const sub2 = calcSubtotalCentavos(1.5, 850);
+  const sub3 = calcSubtotalCentavos(1, 3050);
+  assert.strictEqual(sub1, 250);
+  assert.strictEqual(sub2, 1275);
+  assert.strictEqual(sub3, 3050);
+  assert.strictEqual(sub1 + sub2 + sub3, 4575);
+
+  // Redondeo mitad hacia arriba: 1.25 * 333 = 416.25 -> 416; 1.5 * 333 = 499.5 -> 500
+  assert.strictEqual(calcSubtotalCentavos(1.25, 333), 416);
+  assert.strictEqual(calcSubtotalCentavos(1.5, 333), 500);
+
+  // Formateo segun UI_DESIGN.md 2.3
+  assert.strictEqual(formatCentavos(125000, 'INGRESO', 'USD'), '+ 1,250.00');
+  assert.strictEqual(formatCentavos(125000, 'GASTO', 'USD'), '- 1,250.00');
+  assert.strictEqual(formatCentavos(125000, 'BALANCE', 'USD'), '1,250.00');
+  assert.strictEqual(formatCentavos(-125000, 'BALANCE', 'USD'), '- 1,250.00');
+  assert.strictEqual(formatCentavos(125000, 'TOTAL_MONEDA', 'USD'), 'USD 1,250.00');
+
+  // Detector anti-emoji en cliente
+  assert.strictEqual(containsEmoji('Texto contable valido'), false);
+  assert.strictEqual(containsEmoji('Texto con \u{1F600}'), true);
+  console.log('[OK] Aritmetica de centavos, formateo y filtro anti-emojis verificados.');
+
+  console.log('[TEST] 5. Validando servidor local de escritorio y activos estaticos...');
+  const { server, url } = await startLocalServer(0);
+  try {
+    const resHtml = await fetch(`${url}/`);
+    assert.strictEqual(resHtml.status, 200);
+    const htmlText = await resHtml.text();
+    assert(htmlText.includes('css/all.min.css'), 'Debe incluir FontAwesome local');
+    assert(htmlText.includes('chart.js'), 'Debe incluir Chart.js');
+
+    const resCfg = await fetch(`${url}/local-config`);
+    assert.strictEqual(resCfg.status, 200);
+    const cfgJson = await resCfg.json();
+    assert.strictEqual(cfgJson.ok, true);
+    assert.strictEqual(cfgJson.data.host, '51.161.47.99');
+    assert.strictEqual(cfgJson.data.puerto, 54892);
+    assert.strictEqual(cfgJson.data.token_privado, DEFAULT_CONFIG.token_privado);
+  } finally {
+    server.close();
+  }
+  console.log('[OK] Servidor local y endpoints de configuracion verificados.');
+
+  console.log('[TEST] 6. Validando cliente HTTP contra servidor mock del contrato API...');
+  let receivedHeaders = null;
+  let receivedBody = null;
+  const mockApiServer = http.createServer((req, res) => {
+    receivedHeaders = req.headers;
+    const chunks = [];
+    req.on('data', (c) => chunks.push(c));
+    req.on('end', () => {
+      receivedBody = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : null;
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify({
+        ok: true,
+        data: { estado: 'OK', version_api: '1.0.0', moneda: 'USD', hora_servidor: '2026-11-04T02:14:40Z' },
+        meta: null
+      }));
+    });
+  });
+
+  await new Promise((resolve) => mockApiServer.listen(0, '127.0.0.1', resolve));
+  const mockPort = mockApiServer.address().port;
+
+  try {
+    await global.AppConfig.updateConfig({ host: '127.0.0.1', puerto: mockPort });
+    await global.ApiClient.createCompra({
+      naturaleza: 'VARIABLE',
+      fecha: '2026-11-03',
+      comercio: 'Supermaxi',
+      descripcion: 'Compra semanal',
+      categoria_id: 11,
+      metodo_pago: 'DEBITO',
+      notas: null,
+      articulos: [
+        { articulo: 'Leche entera 1L', cantidad: 2, unidad: 'UNIDAD', precio_unitario_centavos: 125 }
+      ]
+    });
+
+    assert.strictEqual(
+      receivedHeaders['x-app-private-token'],
+      'SZ6ydSFNmkAbrFLLrRahSEVxGnLkvABw',
+      'El cliente debe enviar siempre el header X-App-Private-Token'
+    );
+    assert.strictEqual(receivedBody.comercio, 'Supermaxi');
+    assert.strictEqual(receivedBody.articulos[0].precio_unitario_centavos, 125);
+  } finally {
+    await global.AppConfig.resetToDefault();
+    mockApiServer.close();
+  }
+  console.log('[OK] Cliente HTTP envia X-App-Private-Token y payloads canonicos correctamente.');
+  console.log('\n=== TODAS LAS PRUEBAS DE CONFORMIDAD SUPERADAS EXITOSAMENTE ===');
+}
+
+runTests().catch((err) => {
+  console.error('[FALLO EN PRUEBAS]:', err);
+  process.exit(1);
+});

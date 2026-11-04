@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Espaciado en multiplos de 8dp (UI_DESIGN.md Seccion 4) -->
+    <dimen name="space_4">4dp</dimen>
+    <dimen name="space_8">8dp</dimen>
+    <dimen name="space_16">16dp</dimen>
+    <dimen name="space_24">24dp</dimen>
+    <dimen name="space_32">32dp</dimen>
+    <dimen name="radius_base">4dp</dimen>
+    <dimen name="button_height">48dp</dimen>
+    <dimen name="row_height">40dp</dimen>
+
+    <!-- Tipografia (UI_DESIGN.md Seccion 3) -->
+    <dimen name="text_kpi">28sp</dimen>
+    <dimen name="text_title">22sp</dimen>
+    <dimen name="text_subtitle">16sp</dimen>
+    <dimen name="text_base">14sp</dimen>
+    <dimen name="text_label">12sp</dimen>
+</resources>
