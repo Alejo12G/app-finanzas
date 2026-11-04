@@ -12,7 +12,7 @@ import java.util.Locale;
  */
 public final class CurrencyUtils {
 
-    private static String activeCurrency = "USD";
+    private static String activeCurrency = "COP";
 
     private CurrencyUtils() {
     }

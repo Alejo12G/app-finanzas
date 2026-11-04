@@ -377,7 +377,7 @@
         $('diag-estado').innerHTML = `<span class="badge badge-success"><i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>${escapeHtml(data.estado || 'OK')}</span></span>`;
       }
       if ($('diag-version-api')) $('diag-version-api').textContent = data.version_api || '1.0.0';
-      if ($('diag-moneda')) $('diag-moneda').textContent = data.moneda || 'USD';
+      if ($('diag-moneda')) $('diag-moneda').textContent = data.moneda || 'COP';
       if ($('diag-hora-servidor')) $('diag-hora-servidor').textContent = data.hora_servidor || '-';
 
       // Comprobar validez del token privado cargando categorias
@@ -2057,8 +2057,8 @@
 
     const articulos = [];
     for (const seg of segments) {
-      // Patron: [cantidad] [unidad opcional] [nombre articulo] (a | por | $ | USD) [precio]
-      const re = /^(?:(\d+(?:\.\d{1,3})?)\s+)?(?:(kg|kilos?|g|gr|gramos|l|lt|litros?|ml|paq|paquetes?|und|unidad(?:es)?)\s+(?:de\s+)?)?(.+?)\s+(?:a|por|precio|@|\$|usd)\s*\$?\s*(\d+(?:\.\d{1,2})?)/i;
+      // Patron: [cantidad] [unidad opcional] [nombre articulo] (a | por | $ | COP | USD) [precio]
+      const re = /^(?:(\d+(?:\.\d{1,3})?)\s+)?(?:(kg|kilos?|g|gr|gramos|l|lt|litros?|ml|paq|paquetes?|und|unidad(?:es)?)\s+(?:de\s+)?)?(.+?)\s+(?:a|por|precio|@|\$|cop|usd)\s*\$?\s*(\d+(?:\.\d{1,2})?)/i;
       const m = re.exec(seg);
       if (m) {
         const cant = m[1] ? Number(m[1]) : 1;

@@ -89,11 +89,11 @@ async function runTests() {
   assert.strictEqual(calcSubtotalCentavos(1.5, 333), 500);
 
   // Formateo segun UI_DESIGN.md 2.3
-  assert.strictEqual(formatCentavos(125000, 'INGRESO', 'USD'), '+ 1,250.00');
-  assert.strictEqual(formatCentavos(125000, 'GASTO', 'USD'), '- 1,250.00');
-  assert.strictEqual(formatCentavos(125000, 'BALANCE', 'USD'), '1,250.00');
-  assert.strictEqual(formatCentavos(-125000, 'BALANCE', 'USD'), '- 1,250.00');
-  assert.strictEqual(formatCentavos(125000, 'TOTAL_MONEDA', 'USD'), 'USD 1,250.00');
+  assert.strictEqual(formatCentavos(125000, 'INGRESO', 'COP'), '+ 1,250.00');
+  assert.strictEqual(formatCentavos(125000, 'GASTO', 'COP'), '- 1,250.00');
+  assert.strictEqual(formatCentavos(125000, 'BALANCE', 'COP'), '1,250.00');
+  assert.strictEqual(formatCentavos(-125000, 'BALANCE', 'COP'), '- 1,250.00');
+  assert.strictEqual(formatCentavos(125000, 'TOTAL_MONEDA', 'COP'), 'COP 1,250.00');
 
   // Detector anti-emoji en cliente
   assert.strictEqual(containsEmoji('Texto contable valido'), false);
@@ -136,7 +136,7 @@ async function runTests() {
       });
       res.end(JSON.stringify({
         ok: true,
-        data: { estado: 'OK', version_api: '1.0.0', moneda: 'USD', hora_servidor: '2026-11-04T02:14:40Z' },
+        data: { estado: 'OK', version_api: '1.0.0', moneda: 'COP', hora_servidor: '2026-11-04T02:14:40Z' },
         meta: null
       }));
     });

@@ -179,7 +179,7 @@
   function formatCentavos(centavos, modo = 'NEUTRO', moneda = null) {
     const val = Math.trunc(Number(centavos) || 0);
     const base = formatNumberWithCommas(val);
-    const curr = moneda || (global.AppConfig ? global.AppConfig.getCurrency() : 'USD');
+    const curr = moneda || (global.AppConfig ? global.AppConfig.getCurrency() : 'COP');
 
     switch (modo) {
       case 'INGRESO':

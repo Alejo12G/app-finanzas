@@ -15,7 +15,7 @@ public final class AppConfig {
     public static final int TIMEOUT_AI_MS = 90000;
 
     public static final String APP_VERSION = "1.0.0";
-    public static final String DEFAULT_CURRENCY = "USD";
+    public static final String DEFAULT_CURRENCY = "COP";
 
     private AppConfig() {
     }

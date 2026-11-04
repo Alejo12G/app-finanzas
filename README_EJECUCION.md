@@ -13,7 +13,7 @@ Las tres aplicaciones se comunican bajo los siguientes parametros unificados (de
 - **URL Base API REST:** `http://51.161.47.99:54892/api/v1`
 - **Cabecera de Seguridad:** `X-App-Private-Token`
 - **Token Privado:** `SZ6ydSFNmkAbrFLLrRahSEVxGnLkvABw`
-- **Moneda Principal:** `USD` (montos procesados en centavos enteros)
+- **Moneda Principal:** `COP` (montos procesados en centavos enteros)
 
 ---
 

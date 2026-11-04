@@ -45,7 +45,7 @@
                 android:id="@+id/tvSubtitleCurrency"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Moneda: USD"
+                android:text="Moneda: COP"
                 android:textColor="@color/color_primario_suave"
                 android:textSize="11sp" />
         </LinearLayout>

@@ -13,13 +13,13 @@ public class HealthInfo {
         if (obj == null) {
             info.estado = "DESCONOCIDO";
             info.versionApi = "-";
-            info.moneda = "USD";
+            info.moneda = "COP";
             info.horaServidor = "-";
             return info;
         }
         info.estado = obj.optString("estado", "OK");
         info.versionApi = obj.optString("version_api", "1.0.0");
-        info.moneda = obj.optString("moneda", "USD");
+        info.moneda = obj.optString("moneda", "COP");
         info.horaServidor = obj.optString("hora_servidor", "-");
         return info;
     }

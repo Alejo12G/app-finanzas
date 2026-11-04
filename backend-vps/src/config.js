@@ -42,7 +42,7 @@ const config = {
   PORT: parseInt(process.env.PORT || '54892', 10),
   APP_PRIVATE_TOKEN: process.env.APP_PRIVATE_TOKEN || 'SZ6ydSFNmkAbrFLLrRahSEVxGnLkvABw',
   APP_DB_PATH: resolvedDbPath,
-  APP_MONEDA: (process.env.APP_MONEDA || 'USD').trim().toUpperCase(),
+  APP_MONEDA: (process.env.APP_MONEDA || 'COP').trim().toUpperCase(),
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
   VERSION_API: '1.0.0',

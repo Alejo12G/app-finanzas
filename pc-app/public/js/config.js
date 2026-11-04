@@ -12,7 +12,7 @@
     token_privado: 'SZ6ydSFNmkAbrFLLrRahSEVxGnLkvABw',
     timeout_general_ms: 15000,
     timeout_ia_ms: 90000,
-    moneda_defecto: 'USD',
+    moneda_defecto: 'COP',
     version_app: '1.0.0'
   });
 
@@ -129,7 +129,7 @@
   }
 
   function getCurrency() {
-    return activeCurrency || state.moneda_defecto || 'USD';
+    return activeCurrency || state.moneda_defecto || 'COP';
   }
 
   function setCurrency(isoCode) {

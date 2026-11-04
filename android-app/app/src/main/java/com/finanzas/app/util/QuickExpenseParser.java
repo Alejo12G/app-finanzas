@@ -83,7 +83,7 @@ public final class QuickExpenseParser {
 
         // 5. Extraer Monto (ej. $45.50, 45,50, 120, etc., ignorando fechas)
         String textWithoutDates = text.replaceAll("\\d{4}-\\d{2}-\\d{2}", " ");
-        Matcher amountMatcher = Pattern.compile("(?:\\$|usd|eur|s/|\\b)\\s*(\\d{1,8}(?:[.,]\\d{1,2})?)\\b", Pattern.CASE_INSENSITIVE).matcher(textWithoutDates);
+        Matcher amountMatcher = Pattern.compile("(?:\\$|cop|usd|eur|s/|\\b)\\s*(\\d{1,8}(?:[.,]\\d{1,2})?)\\b", Pattern.CASE_INSENSITIVE).matcher(textWithoutDates);
         if (amountMatcher.find()) {
             String numStr = amountMatcher.group(1).replace(",", ".");
             long parsed = CurrencyUtils.parseMontoToCentavos(numStr);
