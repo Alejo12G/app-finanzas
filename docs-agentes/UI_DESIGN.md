@@ -26,50 +26,64 @@
 
 ---
 
-## 2. Paleta de colores
+## 2. Paleta de colores y sistema de temas
 
-### 2.1 Colores principales (obligatorios)
+El sistema admite dos modos de presentacion visual bajo un diseno sobrio de terminal bancaria y contable: **Modo Oscuro Clásico (POR DEFECTO)** y **Modo Claro Clásico**. La seleccion se persiste en el almacenamiento del cliente (`localStorage.getItem('app_theme')`), aplicando `'dark'` obligatoriamente si no existe ninguna preferencia previa.
 
-| Token | Hex | Uso |
+### 2.1 Paleta oficial Modo Oscuro (Por defecto en PC App)
+
+| Token CSS / Elemento | Hex | Rol y Uso Contable |
 |---|---|---|
-| `color-primario` | `#1B2A4A` | Azul marino. Barra superior, menu lateral, encabezados de tabla, botones primarios, titulos. |
-| `color-secundario` | `#4A5568` | Gris pizarra. Texto secundario, iconos inactivos, bordes de enfasis, botones secundarios. |
-| `color-exito` | `#2E7D32` | Verde contable. Ingresos, montos positivos, balance positivo, presupuesto `NORMAL`, confirmaciones. |
-| `color-peligro` | `#C62828` | Rojo alerta. Gastos en cifras de balance, montos negativos, presupuesto `EXCEDIDO`, errores, acciones destructivas. |
-| `color-fondo` | `#F4F6F8` | Fondo general de la aplicacion. |
+| `color-fondo` | `#12161F` | Fondo principal de la ventana de aplicacion. |
+| `color-superficie` | `#1A202C` | Fondo de tarjetas, paneles, barras laterales y cabeceras de tabla. |
+| `color-tabla-zebra` | `#222938` | Filas alternas de tabla (efecto cebra y hover). |
+| `color-borde` | `#2D3748` | Bordes de tablas, divisores, inputs y contenedores. |
+| `color-texto` | `#E2E8F0` | Texto principal, titulos y cifras neutras de alta legibilidad. |
+| `color-texto-secundario` | `#94A3B8` | Etiquetas, leyendas, ayudas y texto secundario. |
+| `color-primario` | `#2B6CB0` | Azul institucional. Botones primarios y acentos (`hover: #3182CE`). |
+| `color-exito` | `#38A169` | Verde contable. Ingresos, balances positivos y estado `NORMAL`. |
+| `color-peligro` | `#E53E3E` | Rojo contable. Gastos, alertas y estado `EXCEDIDO`. |
+| `color-advertencia` | `#D69E2E` | Ambar contable. Estado de presupuesto `ADVERTENCIA`. |
+| `color-secundario` | `#94A3B8` | Iconos inactivos y bordes de controles secundarios. |
+| `color-texto-deshabilitado` | `#64748B` | Controles y texto deshabilitado. |
+| `color-texto-invertido` | `#FFFFFF` | Texto sobre botones primarios, exito y peligro. |
 
-### 2.2 Colores de soporte (derivados, permitidos)
+### 2.2 Paleta clasica Modo Claro
 
-| Token | Hex | Uso |
+| Token CSS / Elemento | Hex | Rol y Uso Contable |
 |---|---|---|
-| `color-superficie` | `#FFFFFF` | Tarjetas, tablas, formularios, dialogos. |
-| `color-primario-hover` | `#24375F` | Hover/pulsado de elementos primarios. |
-| `color-primario-suave` | `#E8ECF3` | Fila seleccionada, item de menu activo, fondos de chips. |
-| `color-borde` | `#D9DEE5` | Bordes de tarjetas, separadores, bordes de inputs. |
-| `color-texto` | `#1A202C` | Texto principal. |
-| `color-texto-secundario` | `#4A5568` | Etiquetas, subtitulos, ayudas. |
-| `color-texto-deshabilitado` | `#A0AEC0` | Controles deshabilitados. |
-| `color-texto-invertido` | `#FFFFFF` | Texto sobre `color-primario`, `color-exito`, `color-peligro`. |
-| `color-advertencia` | `#B26A00` | Presupuesto `ADVERTENCIA` (80 a 99.99 por ciento). |
-| `color-exito-suave` | `#E8F5E9` | Fondo de mensajes de exito. |
-| `color-peligro-suave` | `#FDECEA` | Fondo de mensajes de error. |
-| `color-advertencia-suave` | `#FFF4E5` | Fondo de mensajes de advertencia. |
+| `color-fondo` | `#F4F6F8` | Fondo general claro de la aplicacion. |
+| `color-superficie` | `#FFFFFF` | Tarjetas, paneles, modales y formularios. |
+| `color-tabla-cabecera` | `#1B2A4A` | Azul marino en encabezados de tabla y modales. |
+| `color-tabla-zebra` | `#F4F6F8` | Filas alternas de tabla. |
+| `color-borde` | `#D9DEE5` | Bordes de tarjetas, separadores y campos. |
+| `color-texto` | `#1A202C` | Texto principal oscuro. |
+| `color-texto-secundario` | `#4A5568` | Gris pizarra para subtitulos y etiquetas. |
+| `color-primario` | `#1B2A4A` | Azul marino corporativo (`hover: #24375F`). |
+| `color-exito` | `#2E7D32` | Verde contable para ingresos y confirmaciones. |
+| `color-peligro` | `#C62828` | Rojo alerta para gastos y acciones destructivas. |
+| `color-advertencia` | `#B26A00` | Ambar para advertencias de presupuesto. |
 
-Prohibido introducir colores fuera de estas dos tablas (excepto el campo `color` que devuelve la API para categorias, que ya usa esta paleta).
+### 2.3 Semantica de cifras por modo visual
 
-### 2.3 Semantica de cifras
-
-| Situacion | Color | Formato |
-|---|---|---|
-| Ingreso | `#2E7D32` | `+ 1,250.00` |
-| Gasto | `#C62828` | `- 1,250.00` |
-| Balance positivo | `#2E7D32` | `1,250.00` |
-| Balance negativo | `#C62828` | `- 1,250.00` |
-| Neutro (limites, totales informativos) | `#1A202C` | `1,250.00` |
+| Situacion | Color (Modo Oscuro) | Color (Modo Claro) | Formato Obligatorio |
+|---|---|---|---|
+| Ingreso | `#38A169` | `#2E7D32` | `+ 1,250.00` |
+| Gasto | `#E53E3E` | `#C62828` | `- 1,250.00` |
+| Balance positivo | `#38A169` | `#2E7D32` | `1,250.00` |
+| Balance negativo | `#E53E3E` | `#C62828` | `- 1,250.00` |
+| Neutro (limites, totales) | `#E2E8F0` | `#1A202C` | `1,250.00` |
 
 - La API entrega centavos enteros; la UI divide entre 100 solo para mostrar, con 2 decimales fijos.
 - Separador de miles `,` y decimal `.`. Codigo de moneda (de `GET /health`, campo `moneda`) a la izquierda en encabezados de totales: `USD 1,250.00`.
 - Cifras alineadas a la derecha en tablas y con numeros tabulares (`font-variant-numeric: tabular-nums` en PC; fuente monoespaciada para numeros o `fontFeatureSettings = "tnum"` en Android).
+
+### 2.4 Selector y alternancia de temas
+
+- **Persistencia:** Al iniciar la app, se consulta `localStorage.getItem('app_theme')`. Si no existe valor previo, se establece obligatoriamente `'dark'`.
+- **Selector:** Boton sobrio en la barra superior de navegacion y en la pantalla de Configuracion.
+- **Iconografia permitida:** Exclusivamente iconos FontAwesome 6 (`fa-solid fa-moon`, `fa-solid fa-sun`, `fa-solid fa-circle-half-stroke`). CERO EMOJIS.
+- **Sin recarga:** La transicion entre modos ocurre dinamicamente en tiempo real mediante el atributo `data-theme` en el elemento raiz.
 
 ### 2.4 Estado de presupuestos (barra de progreso)
 
@@ -273,11 +287,17 @@ Los clientes muestran solo iconos de las tablas 5.6 y 5.7 en el selector de cate
 | Asesor IA | Selector de `tipo_analisis` y mes, campo de pregunta (solo `PREGUNTA_LIBRE`), resultado con resumen, puntuacion (0-100), recomendaciones con prioridad y alertas. | `POST /ai/analyze` |
 | Configuracion | Estado de conexion (`GET /health`), URL del servidor (solo lectura), version de la app. | `GET /health` |
 
-### 6.1 Graficos
+### 6.1 Graficos (Chart.js en PC)
 
-- Colores de series: Ingresos `#2E7D32`, Gastos `#C62828`, Balance `#1B2A4A`. Categorias: usar el campo `color` de la API.
+- **Colores de series por tema:**
+  - *Modo Oscuro (Defecto):* Ingresos `#38A169`, Gastos `#E53E3E`, Balance `#2B6CB0`.
+  - *Modo Claro:* Ingresos `#2E7D32`, Gastos `#C62828`, Balance `#1B2A4A`.
+  - *Categorias:* usar el campo `color` provisto por la API (o `#2D3748` / `#D9DEE5` si no hay registros).
+- **Ejes y cuadricula:**
+  - *Modo Oscuro:* Lineas de cuadricula en `#2D3748`, etiquetas y leyendas en `#94A3B8`.
+  - *Modo Claro:* Lineas de cuadricula en `#D9DEE5`, etiquetas y leyendas en `#4A5568`.
+- **Actualizacion dinamica:** Las instancias de graficos deben responder de inmediato al cambio de tema invocando `updateChartTheme(theme)` sin recargar la pagina.
 - Sin efectos 3D, sin sombras, sin animaciones de entrada mayores a 300 ms.
-- Ejes y cuadricula en `#D9DEE5`; etiquetas en `#4A5568`.
 - Librerias livianas solamente (PC: libreria JS ligera o SVG/Canvas propio; Android: Canvas propio o libreria pura sin NDK).
 
 ---

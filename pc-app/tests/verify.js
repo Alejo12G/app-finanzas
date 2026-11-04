@@ -172,6 +172,63 @@ async function runTests() {
     mockApiServer.close();
   }
   console.log('[OK] Cliente HTTP envia X-App-Private-Token y payloads canonicos correctamente.');
+
+  console.log('[TEST] 7. Validando sistema de temas (Modo Oscuro por defecto, paleta oficial y Chart.js)...');
+  const { resolveAppTheme, getChartThemeConfig, THEME_STORAGE_KEY } = global.AppUtils;
+
+  // 7.1 Persistencia y valores por defecto
+  assert.strictEqual(THEME_STORAGE_KEY, 'app_theme', 'La clave de persistencia debe ser app_theme');
+  assert.strictEqual(resolveAppTheme(null), 'dark', 'Si no hay valor guardado, debe retornar dark por defecto');
+  assert.strictEqual(resolveAppTheme(undefined), 'dark', 'Si es undefined, debe retornar dark');
+  assert.strictEqual(resolveAppTheme(''), 'dark', 'Si es string vacio, debe retornar dark');
+  assert.strictEqual(resolveAppTheme('random_value'), 'dark', 'Valores desconocidos deben caer a dark');
+  assert.strictEqual(resolveAppTheme('light'), 'light', 'light debe retornar light');
+  assert.strictEqual(resolveAppTheme('LIGHT'), 'light', 'Debe ignorar mayusculas y retornar light');
+
+  // 7.2 Configuracion de colores para Chart.js
+  const darkChartCfg = getChartThemeConfig('dark');
+  assert.strictEqual(darkChartCfg.gridColor, '#2D3748', 'Cuadricula oscura debe ser #2D3748');
+  assert.strictEqual(darkChartCfg.textColor, '#94A3B8', 'Texto secundario oscuro debe ser #94A3B8');
+  assert.strictEqual(darkChartCfg.ingresoColor, '#38A169', 'Ingresos oscuro debe ser #38A169');
+  assert.strictEqual(darkChartCfg.gastoColor, '#E53E3E', 'Gastos oscuro debe ser #E53E3E');
+  assert.strictEqual(darkChartCfg.balanceColor, '#2B6CB0', 'Balance / acento institucional oscuro debe ser #2B6CB0');
+  assert.strictEqual(darkChartCfg.emptyBarColor, '#2D3748', 'Barra vacia oscura debe ser #2D3748');
+
+  const lightChartCfg = getChartThemeConfig('light');
+  assert.strictEqual(lightChartCfg.gridColor, '#D9DEE5', 'Cuadricula clara debe ser #D9DEE5');
+  assert.strictEqual(lightChartCfg.textColor, '#4A5568', 'Texto claro debe ser #4A5568');
+  assert.strictEqual(lightChartCfg.ingresoColor, '#2E7D32', 'Ingresos claro debe ser #2E7D32');
+  assert.strictEqual(lightChartCfg.gastoColor, '#C62828', 'Gastos claro debe ser #C62828');
+  assert.strictEqual(lightChartCfg.balanceColor, '#1B2A4A', 'Balance claro debe ser #1B2A4A');
+  assert.strictEqual(lightChartCfg.emptyBarColor, '#D9DEE5', 'Barra vacia clara debe ser #D9DEE5');
+
+  // 7.3 Verificacion de variables CSS en styles.css
+  const cssPath = path.join(pcAppRoot, 'public', 'css', 'styles.css');
+  const cssContent = fs.readFileSync(cssPath, 'utf8');
+  assert(cssContent.includes(':root'), 'styles.css debe contener :root');
+  assert(cssContent.includes('[data-theme="light"]'), 'styles.css debe contener [data-theme="light"]');
+  assert(cssContent.includes('--color-fondo: #12161F;'), 'styles.css debe definir fondo oscuro #12161F');
+  assert(cssContent.includes('--color-superficie: #1A202C;'), 'styles.css debe definir superficie oscura #1A202C');
+  assert(cssContent.includes('--color-tabla-zebra: #222938;'), 'styles.css debe definir filas zebra oscura #222938');
+  assert(cssContent.includes('--color-borde: #2D3748;'), 'styles.css debe definir bordes oscuros #2D3748');
+  assert(cssContent.includes('--color-texto: #E2E8F0;'), 'styles.css debe definir texto principal oscuro #E2E8F0');
+  assert(cssContent.includes('--color-texto-secundario: #94A3B8;'), 'styles.css debe definir texto secundario oscuro #94A3B8');
+  assert(cssContent.includes('--color-primario: #2B6CB0;'), 'styles.css debe definir azul institucional #2B6CB0');
+  assert(cssContent.includes('--color-primario-hover: #3182CE;'), 'styles.css debe definir hover institucional #3182CE');
+  assert(cssContent.includes('--color-exito: #38A169;'), 'styles.css debe definir verde contable #38A169');
+  assert(cssContent.includes('--color-peligro: #E53E3E;'), 'styles.css debe definir rojo contable #E53E3E');
+
+  // 7.4 Verificacion de componentes en index.html
+  const htmlPath = path.join(pcAppRoot, 'public', 'index.html');
+  const htmlContent = fs.readFileSync(htmlPath, 'utf8');
+  assert(htmlContent.includes('id="btn-topbar-theme"'), 'index.html debe contener el boton btn-topbar-theme');
+  assert(htmlContent.includes('id="btn-cfg-theme-dark"'), 'index.html debe contener btn-cfg-theme-dark');
+  assert(htmlContent.includes('id="btn-cfg-theme-light"'), 'index.html debe contener btn-cfg-theme-light');
+  assert(htmlContent.includes('id="btn-cfg-theme-toggle"'), 'index.html debe contener btn-cfg-theme-toggle');
+  assert(htmlContent.includes('id="diag-tema"'), 'index.html debe contener diag-tema en diagnostico');
+  assert(htmlContent.includes('data-theme'), 'index.html debe aplicar data-theme en el script inicial');
+  console.log('[OK] Sistema de temas, persistencia y variables CSS validados correctamente.');
+
   console.log('\n=== TODAS LAS PRUEBAS DE CONFORMIDAD SUPERADAS EXITOSAMENTE ===');
 }
 

@@ -10,6 +10,18 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <!-- Estilos del Sistema de Diseno Contable -->
   <link rel="stylesheet" href="css/styles.css" />
+  <!-- Deteccion y aplicacion inmediata de tema (Modo Oscuro por defecto) -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('app_theme');
+        var theme = (saved === 'light') ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (_e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
 </head>
 <body>
   <div class="app-shell">
@@ -25,6 +37,10 @@
           <i class="fa-solid fa-coins" aria-hidden="true"></i>
           <span id="topbar-currency-code">COP</span>
         </span>
+        <button type="button" id="btn-topbar-theme" class="btn btn-secondary btn-sm" title="Alternar entre Modo Oscuro y Modo Claro" aria-label="Alternar tema de la aplicacion">
+          <i id="topbar-theme-icon" class="fa-solid fa-sun" aria-hidden="true"></i>
+          <span id="topbar-theme-label">Modo Claro</span>
+        </button>
         <div id="topbar-connection-pill" class="connection-pill">
           <i id="topbar-connection-icon" class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
           <span id="topbar-connection-text">Verificando servidor...</span>
@@ -1299,6 +1315,40 @@
             </div>
           </div>
 
+          <!-- Selector de Tema y Apariencia Visual -->
+          <div class="card" style="margin-bottom: 16px;">
+            <div class="card-header">
+              <h2 class="card-title">
+                <i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i>
+                <span>Tema de la Interfaz Visual</span>
+              </h2>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+              <div>
+                <p style="font-size: 14px; font-weight: 600; color: var(--color-texto);" id="cfg-theme-current-label">
+                  Tema activo: Modo Oscuro Clásico (Por defecto)
+                </p>
+                <p style="font-size: 12px; color: var(--color-texto-secundario); margin-top: 4px;">
+                  Estilo de terminal financiera contable sin colores neón. Selección persistida en almacenamiento local.
+                </p>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <button type="button" id="btn-cfg-theme-dark" class="btn btn-secondary btn-sm" title="Establecer Modo Oscuro">
+                  <i class="fa-solid fa-moon" aria-hidden="true"></i>
+                  <span>Modo Oscuro</span>
+                </button>
+                <button type="button" id="btn-cfg-theme-light" class="btn btn-secondary btn-sm" title="Establecer Modo Claro">
+                  <i class="fa-solid fa-sun" aria-hidden="true"></i>
+                  <span>Modo Claro</span>
+                </button>
+                <button type="button" id="btn-cfg-theme-toggle" class="btn btn-primary btn-sm" title="Alternar entre Modo Oscuro y Modo Claro">
+                  <i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i>
+                  <span id="btn-cfg-theme-toggle-label">Alternar Tema</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="grid-2">
             <!-- Parametros de Conexion Editables -->
             <div class="card">
@@ -1398,6 +1448,10 @@
                     <tr>
                       <td><strong>Timeout Modulo IA (Gemini)</strong></td>
                       <td class="text-right tabular-nums">90 segundos</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Tema Visual Activo</strong></td>
+                      <td id="diag-tema" class="text-right tabular-nums">Modo Oscuro (Terminal Contable)</td>
                     </tr>
                     <tr>
                       <td><strong>Version de la Aplicacion PC</strong></td>

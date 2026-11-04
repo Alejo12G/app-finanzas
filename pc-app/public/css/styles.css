@@ -1,30 +1,100 @@
-:root {
-  /* 2.1 Colores principales obligatorios (UI_DESIGN.md) */
-  --color-primario: #1B2A4A;
-  --color-secundario: #4A5568;
-  --color-exito: #2E7D32;
-  --color-peligro: #C62828;
-  --color-fondo: #F4F6F8;
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
 
-  /* 2.2 Colores de soporte permitidos (UI_DESIGN.md) */
+  /* PALETA OFICIAL MODO OSCURO - POR DEFECTO (UI_DESIGN.md) */
+  --color-fondo: #12161F;
+  --color-superficie: #1A202C;
+  --color-tabla-cabecera: #1A202C;
+  --color-tabla-zebra: #222938;
+  --color-tabla-hover: #222938;
+  --color-borde: #2D3748;
+  --color-texto: #E2E8F0;
+  --color-texto-secundario: #94A3B8;
+  --color-primario: #2B6CB0;
+  --color-primario-hover: #3182CE;
+  --color-primario-suave: #222938;
+  --color-exito: #38A169;
+  --color-peligro: #E53E3E;
+  --color-advertencia: #D69E2E;
+  --color-secundario: #94A3B8;
+  --color-texto-deshabilitado: #64748B;
+  --color-texto-invertido: #FFFFFF;
+
+  /* Fondos suaves contables para badges y alertas */
+  --color-exito-suave: #163323;
+  --color-peligro-suave: #361619;
+  --color-advertencia-suave: #362415;
+
+  /* Componentes especificos de la interfaz */
+  --color-topbar-bg: #1A202C;
+  --color-topbar-border: #2D3748;
+  --color-topbar-text: #E2E8F0;
+  --color-topbar-badge-bg: #222938;
+  --color-topbar-badge-border: #2D3748;
+
+  --color-btn-sec-bg: #1A202C;
+  --color-btn-sec-text: #E2E8F0;
+  --color-btn-sec-border: #2D3748;
+  --color-btn-sec-hover-bg: #222938;
+  --color-btn-sec-hover-border: #3182CE;
+
+  --color-input-bg: #1A202C;
+  --color-input-readonly: #12161F;
+
+  --color-modal-backdrop: rgba(0, 0, 0, 0.72);
+  --sombra-minima: 0 1px 3px rgba(0, 0, 0, 0.45);
+
+  --radio-borde: 4px;
+  --transicion-base: 150ms ease-in-out;
+  --fuente-base: "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* PALETA CLASICA MODO CLARO (UI_DESIGN.md) */
+  --color-fondo: #F4F6F8;
   --color-superficie: #FFFFFF;
-  --color-primario-hover: #24375F;
-  --color-primario-suave: #E8ECF3;
+  --color-tabla-cabecera: #1B2A4A;
+  --color-tabla-zebra: #F4F6F8;
+  --color-tabla-hover: #E8ECF3;
   --color-borde: #D9DEE5;
   --color-texto: #1A202C;
   --color-texto-secundario: #4A5568;
+  --color-primario: #1B2A4A;
+  --color-primario-hover: #24375F;
+  --color-primario-suave: #E8ECF3;
+  --color-exito: #2E7D32;
+  --color-peligro: #C62828;
+  --color-advertencia: #B26A00;
+  --color-secundario: #4A5568;
   --color-texto-deshabilitado: #A0AEC0;
   --color-texto-invertido: #FFFFFF;
-  --color-advertencia: #B26A00;
+
+  /* Fondos suaves contables para badges y alertas */
   --color-exito-suave: #E8F5E9;
   --color-peligro-suave: #FDECEA;
   --color-advertencia-suave: #FFF4E5;
 
-  /* 4. Componentes y espaciado */
+  /* Componentes especificos de la interfaz */
+  --color-topbar-bg: #1B2A4A;
+  --color-topbar-border: #24375F;
+  --color-topbar-text: #FFFFFF;
+  --color-topbar-badge-bg: #24375F;
+  --color-topbar-badge-border: #4A5568;
+
+  --color-btn-sec-bg: #FFFFFF;
+  --color-btn-sec-text: #4A5568;
+  --color-btn-sec-border: #4A5568;
+  --color-btn-sec-hover-bg: #E8ECF3;
+  --color-btn-sec-hover-border: #1B2A4A;
+
+  --color-input-bg: #FFFFFF;
+  --color-input-readonly: #F4F6F8;
+
+  --color-modal-backdrop: rgba(27, 42, 74, 0.48);
   --sombra-minima: 0 1px 2px rgba(27, 42, 74, 0.08);
-  --radio-borde: 4px;
-  --transicion-base: 150ms ease-in-out;
-  --fuente-base: "Segoe UI", Roboto, Arial, sans-serif;
 }
 
 * {
@@ -55,13 +125,13 @@ html, body {
 /* Barra superior bancaria */
 .topbar {
   height: 56px;
-  background-color: var(--color-primario);
-  color: var(--color-texto-invertido);
+  background-color: var(--color-topbar-bg);
+  color: var(--color-topbar-text);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  border-bottom: 1px solid var(--color-primario-hover);
+  border-bottom: 1px solid var(--color-topbar-border);
   flex-shrink: 0;
 }
 
@@ -73,35 +143,35 @@ html, body {
 
 .topbar-brand i {
   font-size: 20px;
-  color: var(--color-texto-invertido);
+  color: var(--color-topbar-text);
 }
 
 .topbar-logo {
   width: 32px;
   height: 32px;
   object-fit: contain;
-  border-radius: 4px;
+  border-radius: var(--radio-borde);
   flex-shrink: 0;
 }
 
 .topbar-title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-texto-invertido);
+  color: var(--color-topbar-text);
 }
 
 .topbar-subtitle {
   font-size: 12px;
-  color: var(--color-primario-suave);
+  color: var(--color-texto-secundario);
   margin-left: 8px;
   padding-left: 8px;
-  border-left: 1px solid var(--color-secundario);
+  border-left: 1px solid var(--color-borde);
 }
 
 .topbar-status {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .connection-pill {
@@ -112,18 +182,19 @@ html, body {
   border-radius: var(--radio-borde);
   font-size: 12px;
   font-weight: 600;
-  background-color: var(--color-primario-hover);
-  color: var(--color-texto-invertido);
-  border: 1px solid var(--color-secundario);
+  background-color: var(--color-topbar-badge-bg);
+  color: var(--color-topbar-text);
+  border: 1px solid var(--color-topbar-badge-border);
 }
 
 .connection-pill.connected i {
-  color: var(--color-exito-suave);
+  color: var(--color-exito);
 }
 
 .connection-pill.disconnected {
   background-color: var(--color-peligro);
   border-color: var(--color-peligro);
+  color: var(--color-texto-invertido);
 }
 
 .currency-badge {
@@ -131,12 +202,13 @@ html, body {
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  background-color: var(--color-primario-hover);
-  color: var(--color-texto-invertido);
+  background-color: var(--color-topbar-badge-bg);
+  color: var(--color-topbar-text);
   border-radius: var(--radio-borde);
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  border: 1px solid var(--color-topbar-badge-border);
 }
 
 /* Cuerpo con menu lateral y area de contenido */
@@ -197,7 +269,7 @@ html, body {
 
 .nav-btn:hover {
   background-color: var(--color-fondo);
-  color: var(--color-primario);
+  color: var(--color-texto);
 }
 
 .nav-btn:hover i {
@@ -206,7 +278,7 @@ html, body {
 
 .nav-btn.active {
   background-color: var(--color-primario-suave);
-  color: var(--color-primario);
+  color: var(--color-texto);
   font-weight: 600;
   border-left: 3px solid var(--color-primario);
 }
@@ -271,10 +343,14 @@ html, body {
 .page-title {
   font-size: 22px;
   font-weight: 600;
-  color: var(--color-primario);
+  color: var(--color-texto);
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.page-title i {
+  color: var(--color-primario);
 }
 
 .page-subtitle {
@@ -304,7 +380,7 @@ html, body {
 .period-label {
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-primario);
+  color: var(--color-texto);
   min-width: 130px;
   text-align: center;
 }
@@ -331,10 +407,14 @@ html, body {
 .card-title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-primario);
+  color: var(--color-texto);
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.card-title i {
+  color: var(--color-primario);
 }
 
 /* Rejillas KPI y paneles */
@@ -451,7 +531,7 @@ html, body {
   align-items: start;
 }
 
-/* Botones (UI_DESIGN.md 4: Alto 36px, radio 4px, icono izquierda + texto) */
+/* Botones (UI_DESIGN.md 4) */
 .btn {
   height: 36px;
   padding: 0 16px;
@@ -489,15 +569,23 @@ html, body {
 }
 
 .btn-secondary {
-  background-color: var(--color-superficie);
-  color: var(--color-secundario);
-  border-color: var(--color-secundario);
+  background-color: var(--color-btn-sec-bg);
+  color: var(--color-btn-sec-text);
+  border-color: var(--color-btn-sec-border);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: var(--color-primario-suave);
+  background-color: var(--color-btn-sec-hover-bg);
+  color: var(--color-texto);
+  border-color: var(--color-btn-sec-hover-border);
+}
+
+.btn-secondary i {
+  color: var(--color-texto-secundario);
+}
+
+.btn-secondary:hover:not(:disabled) i {
   color: var(--color-primario);
-  border-color: var(--color-primario);
 }
 
 .btn-danger {
@@ -507,7 +595,6 @@ html, body {
 }
 
 .btn-danger:hover:not(:disabled) {
-  background-color: var(--color-peligro);
   opacity: 0.92;
 }
 
@@ -515,6 +602,10 @@ html, body {
   background-color: var(--color-exito);
   color: var(--color-texto-invertido);
   border-color: var(--color-exito);
+}
+
+.btn-success:hover:not(:disabled) {
+  opacity: 0.92;
 }
 
 .btn-sm {
@@ -529,7 +620,7 @@ html, body {
   padding: 0;
 }
 
-/* Formularios e Inputs (UI_DESIGN.md 4) */
+/* Formularios e Inputs */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -570,11 +661,16 @@ html, body {
   font-family: var(--fuente-base);
   font-size: 14px;
   color: var(--color-texto);
-  background-color: var(--color-superficie);
+  background-color: var(--color-input-bg);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-borde);
-  transition: border-color var(--transicion-base);
+  transition: border-color var(--transicion-base), background-color var(--transicion-base);
   width: 100%;
+}
+
+select.form-control option {
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
 }
 
 textarea.form-control {
@@ -593,7 +689,7 @@ textarea.form-control {
 
 .form-control:disabled,
 .form-control[readonly] {
-  background-color: var(--color-fondo);
+  background-color: var(--color-input-readonly);
   color: var(--color-texto-secundario);
 }
 
@@ -617,7 +713,7 @@ textarea.form-control {
   color: var(--color-texto-secundario);
 }
 
-/* Tablas contables densas (UI_DESIGN.md 4: encabezado #1B2A4A blanco, filas alternas #FFFFFF / #F4F6F8, alto 40px) */
+/* Tablas contables densas */
 .table-responsive {
   width: 100%;
   overflow-x: auto;
@@ -632,7 +728,7 @@ textarea.form-control {
 }
 
 .data-table thead th {
-  background-color: var(--color-primario);
+  background-color: var(--color-tabla-cabecera);
   color: var(--color-texto-invertido);
   font-size: 12px;
   font-weight: 600;
@@ -642,7 +738,7 @@ textarea.form-control {
   padding: 0 12px;
   text-align: left;
   white-space: nowrap;
-  border-bottom: 1px solid var(--color-primario);
+  border-bottom: 1px solid var(--color-borde);
 }
 
 .data-table thead th.text-right {
@@ -661,11 +757,11 @@ textarea.form-control {
 }
 
 .data-table tbody tr:nth-child(even) {
-  background-color: var(--color-fondo);
+  background-color: var(--color-tabla-zebra);
 }
 
 .data-table tbody tr:hover {
-  background-color: var(--color-primario-suave);
+  background-color: var(--color-tabla-hover);
 }
 
 .data-table tbody td {
@@ -679,8 +775,9 @@ textarea.form-control {
   height: 40px;
   padding: 0 12px;
   font-weight: 600;
-  background-color: var(--color-primario-suave);
+  background-color: var(--color-tabla-zebra);
   border-top: 2px solid var(--color-primario);
+  color: var(--color-texto);
 }
 
 /* Chips e insignias */
@@ -697,27 +794,31 @@ textarea.form-control {
 
 .badge-primary {
   background-color: var(--color-primario-suave);
-  color: var(--color-primario);
+  color: var(--color-texto);
+  border: 1px solid var(--color-borde);
 }
 
 .badge-success {
   background-color: var(--color-exito-suave);
   color: var(--color-exito);
+  border: 1px solid var(--color-exito);
 }
 
 .badge-warning {
   background-color: var(--color-advertencia-suave);
   color: var(--color-advertencia);
+  border: 1px solid var(--color-advertencia);
 }
 
 .badge-danger {
   background-color: var(--color-peligro-suave);
   color: var(--color-peligro);
+  border: 1px solid var(--color-peligro);
 }
 
 .badge-neutral {
   background-color: var(--color-fondo);
-  color: var(--color-secundario);
+  color: var(--color-texto-secundario);
   border: 1px solid var(--color-borde);
 }
 
@@ -741,7 +842,7 @@ textarea.form-control {
   flex-shrink: 0;
 }
 
-/* Barras de progreso de presupuestos (UI_DESIGN.md 2.4) */
+/* Barras de progreso de presupuestos */
 .progress-track {
   width: 100%;
   height: 10px;
@@ -806,11 +907,11 @@ textarea.form-control {
 
 .alert-info {
   background-color: var(--color-primario-suave);
-  color: var(--color-primario);
+  color: var(--color-texto);
   border-color: var(--color-primario);
 }
 
-/* Estado vacio (UI_DESIGN.md 4: Icono FontAwesome 48px color #A0AEC0 + texto + boton) */
+/* Estado vacio */
 .empty-state {
   padding: 32px 16px;
   text-align: center;
@@ -872,7 +973,7 @@ textarea.form-control {
   height: 36px;
   border: 1px solid var(--color-borde);
   background-color: var(--color-superficie);
-  color: var(--color-secundario);
+  color: var(--color-texto-secundario);
   border-radius: var(--radio-borde);
   cursor: pointer;
   display: flex;
@@ -884,7 +985,7 @@ textarea.form-control {
 
 .icon-option-btn:hover {
   background-color: var(--color-primario-suave);
-  color: var(--color-primario);
+  color: var(--color-texto);
 }
 
 .icon-option-btn.selected {
@@ -897,7 +998,7 @@ textarea.form-control {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(27, 42, 74, 0.48);
+  background-color: var(--color-modal-backdrop);
   display: none;
   align-items: center;
   justify-content: center;
@@ -927,17 +1028,19 @@ textarea.form-control {
 }
 
 .modal-header {
-  background-color: var(--color-primario);
+  background-color: var(--color-tabla-cabecera);
   color: var(--color-texto-invertido);
   padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-bottom: 1px solid var(--color-borde);
 }
 
 .modal-title {
   font-size: 16px;
   font-weight: 600;
+  color: var(--color-texto-invertido);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -958,6 +1061,7 @@ textarea.form-control {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  color: var(--color-texto);
 }
 
 .modal-footer {
@@ -995,7 +1099,7 @@ textarea.form-control {
 .health-score-number {
   font-size: 28px;
   font-weight: 600;
-  color: var(--color-primario);
+  color: var(--color-texto);
   font-variant-numeric: tabular-nums;
   min-width: 84px;
   text-align: center;
@@ -1003,6 +1107,16 @@ textarea.form-control {
   background-color: var(--color-superficie);
   border: 2px solid var(--color-primario);
   border-radius: var(--radio-borde);
+}
+
+code {
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  padding: 2px 4px;
+  border-radius: 2px;
+  border: 1px solid var(--color-borde);
 }
 
 @media (max-width: 1200px) {

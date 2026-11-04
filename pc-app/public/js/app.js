@@ -10,6 +10,10 @@
     PRIORIDADES_IA,
     ICONOS_CATEGORIAS_PERMITIDOS,
     COLORES_CATEGORIAS_PERMITIDOS,
+    THEME_STORAGE_KEY,
+    DEFAULT_THEME,
+    resolveAppTheme,
+    getChartThemeConfig,
     containsEmoji,
     stripEmojis,
     calcSubtotalCentavos,
@@ -81,6 +85,160 @@
 
   function $(id) {
     return document.getElementById(id);
+  }
+
+  // =========================================================
+  // SISTEMA DE TEMAS: MODO OSCURO (DEFECTO) Y MODO CLARO
+  // =========================================================
+
+  function getActiveTheme() {
+    let saved = null;
+    try {
+      saved = global.localStorage ? global.localStorage.getItem(THEME_STORAGE_KEY) : null;
+    } catch (_e) {}
+    if (!saved && document.documentElement) {
+      saved = document.documentElement.getAttribute('data-theme');
+    }
+    return resolveAppTheme(saved);
+  }
+
+  function updateThemeUi(theme) {
+    const isDark = (theme === 'dark');
+
+    // 1. Selector en la barra superior de navegacion
+    const topbarIcon = $('topbar-theme-icon');
+    const topbarLabel = $('topbar-theme-label');
+    const topbarBtn = $('btn-topbar-theme');
+    if (topbarIcon) {
+      topbarIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    }
+    if (topbarLabel) {
+      topbarLabel.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
+    }
+    if (topbarBtn) {
+      topbarBtn.title = isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro';
+      topbarBtn.setAttribute('aria-label', isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro');
+    }
+
+    // 2. Controles en la pantalla de Configuracion
+    const cfgThemeLabel = $('cfg-theme-current-label');
+    if (cfgThemeLabel) {
+      cfgThemeLabel.textContent = isDark
+        ? 'Tema activo: Modo Oscuro Clásico (Por defecto)'
+        : 'Tema activo: Modo Claro Clásico';
+    }
+
+    const btnDark = $('btn-cfg-theme-dark');
+    const btnLight = $('btn-cfg-theme-light');
+    if (btnDark && btnLight) {
+      if (isDark) {
+        btnDark.className = 'btn btn-primary btn-sm';
+        btnLight.className = 'btn btn-secondary btn-sm';
+      } else {
+        btnDark.className = 'btn btn-secondary btn-sm';
+        btnLight.className = 'btn btn-primary btn-sm';
+      }
+    }
+
+    const diagTema = $('diag-tema');
+    if (diagTema) {
+      diagTema.textContent = isDark
+        ? 'Modo Oscuro (Terminal Contable)'
+        : 'Modo Claro Clásico';
+    }
+  }
+
+  function updateChartTheme(theme) {
+    const cfg = getChartThemeConfig(theme);
+
+    // 1. Grafico de Evolucion mensual (6 Meses)
+    if (AppState.chartEvolucion) {
+      const chart = AppState.chartEvolucion;
+      if (chart.options) {
+        if (chart.options.plugins && chart.options.plugins.legend && chart.options.plugins.legend.labels) {
+          chart.options.plugins.legend.labels.color = cfg.textColor;
+        }
+        if (chart.options.scales) {
+          if (chart.options.scales.x) {
+            if (chart.options.scales.x.grid) chart.options.scales.x.grid.color = cfg.gridColor;
+            if (chart.options.scales.x.ticks) chart.options.scales.x.ticks.color = cfg.textColor;
+          }
+          if (chart.options.scales.y) {
+            if (chart.options.scales.y.grid) chart.options.scales.y.grid.color = cfg.gridColor;
+            if (chart.options.scales.y.ticks) chart.options.scales.y.ticks.color = cfg.textColor;
+          }
+        }
+      }
+      if (chart.data && Array.isArray(chart.data.datasets)) {
+        if (chart.data.datasets[0]) {
+          chart.data.datasets[0].backgroundColor = cfg.ingresoColor;
+          chart.data.datasets[0].borderColor = cfg.ingresoColor;
+        }
+        if (chart.data.datasets[1]) {
+          chart.data.datasets[1].backgroundColor = cfg.gastoColor;
+          chart.data.datasets[1].borderColor = cfg.gastoColor;
+        }
+        if (chart.data.datasets[2]) {
+          chart.data.datasets[2].backgroundColor = cfg.balanceColor;
+          chart.data.datasets[2].borderColor = cfg.balanceColor;
+        }
+      }
+      chart.update();
+    }
+
+    // 2. Grafico de Gastos por Categoria
+    if (AppState.chartCategorias) {
+      const chart = AppState.chartCategorias;
+      if (chart.options && chart.options.scales) {
+        if (chart.options.scales.x) {
+          if (chart.options.scales.x.grid) chart.options.scales.x.grid.color = cfg.gridColor;
+          if (chart.options.scales.x.ticks) chart.options.scales.x.ticks.color = cfg.textColor;
+        }
+        if (chart.options.scales.y) {
+          if (chart.options.scales.y.grid) chart.options.scales.y.grid.color = cfg.gridColor;
+          if (chart.options.scales.y.ticks) chart.options.scales.y.ticks.color = cfg.textColor;
+        }
+      }
+      if (chart.data && Array.isArray(chart.data.datasets) && chart.data.datasets[0]) {
+        const ds = chart.data.datasets[0];
+        if (Array.isArray(ds.data) && (ds.data.length === 1 && ds.data[0] === 0)) {
+          ds.backgroundColor = [cfg.emptyBarColor];
+          ds.borderColor = [cfg.emptyBarColor];
+        }
+      }
+      chart.update();
+    }
+  }
+
+  function setTheme(targetTheme) {
+    const theme = resolveAppTheme(targetTheme);
+    if (document.documentElement) {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+    try {
+      if (global.localStorage) {
+        global.localStorage.setItem(THEME_STORAGE_KEY, theme);
+      }
+    } catch (_e) {}
+
+    updateThemeUi(theme);
+    updateChartTheme(theme);
+    return theme;
+  }
+
+  function toggleTheme() {
+    const current = getActiveTheme();
+    const next = (current === 'dark') ? 'light' : 'dark';
+    return setTheme(next);
+  }
+
+  function initTheme() {
+    let saved = null;
+    try {
+      saved = global.localStorage ? global.localStorage.getItem(THEME_STORAGE_KEY) : null;
+    } catch (_e) {}
+    const initialTheme = resolveAppTheme(saved);
+    setTheme(initialTheme);
   }
 
   function showBanner(containerId, tipo, mensaje, retryCallback = null) {
@@ -551,7 +709,9 @@
   function renderDashboardCharts(evolucion, gastosPorCat) {
     if (typeof global.Chart === 'undefined') return;
 
-    // 1. Evolucion 6 meses (Ingresos #2E7D32, Gastos #C62828, Balance #1B2A4A)
+    const themeCfg = getChartThemeConfig(getActiveTheme());
+
+    // 1. Evolucion 6 meses (Ingresos, Gastos, Balance segun tema contable)
     const ctxEvo = $('chart-evolucion') ? $('chart-evolucion').getContext('2d') : null;
     if (ctxEvo) {
       if (AppState.chartEvolucion) {
@@ -570,22 +730,22 @@
             {
               label: 'Ingresos',
               data: ingresosData,
-              backgroundColor: '#2E7D32',
-              borderColor: '#2E7D32',
+              backgroundColor: themeCfg.ingresoColor,
+              borderColor: themeCfg.ingresoColor,
               borderWidth: 1
             },
             {
               label: 'Gastos',
               data: gastosData,
-              backgroundColor: '#C62828',
-              borderColor: '#C62828',
+              backgroundColor: themeCfg.gastoColor,
+              borderColor: themeCfg.gastoColor,
               borderWidth: 1
             },
             {
               label: 'Balance',
               data: balanceData,
-              backgroundColor: '#1B2A4A',
-              borderColor: '#1B2A4A',
+              backgroundColor: themeCfg.balanceColor,
+              borderColor: themeCfg.balanceColor,
               borderWidth: 1
             }
           ]
@@ -596,17 +756,17 @@
           animation: { duration: 200 },
           plugins: {
             legend: {
-              labels: { color: '#4A5568', font: { family: '"Segoe UI", Roboto, Arial, sans-serif', size: 12 } }
+              labels: { color: themeCfg.textColor, font: { family: '"Segoe UI", Roboto, Arial, sans-serif', size: 12 } }
             }
           },
           scales: {
             x: {
-              grid: { color: '#D9DEE5' },
-              ticks: { color: '#4A5568' }
+              grid: { color: themeCfg.gridColor },
+              ticks: { color: themeCfg.textColor }
             },
             y: {
-              grid: { color: '#D9DEE5' },
-              ticks: { color: '#4A5568' }
+              grid: { color: themeCfg.gridColor },
+              ticks: { color: themeCfg.textColor }
             }
           }
         }
@@ -626,8 +786,8 @@
         ? gastosPorCat.map((g) => Number((g.total_centavos || 0) / 100))
         : [0];
       const colors = gastosPorCat.length > 0
-        ? gastosPorCat.map((g) => (g.categoria && g.categoria.color ? g.categoria.color : '#4A5568'))
-        : ['#D9DEE5'];
+        ? gastosPorCat.map((g) => (g.categoria && g.categoria.color ? g.categoria.color : themeCfg.textColor))
+        : [themeCfg.emptyBarColor];
 
       AppState.chartCategorias = new global.Chart(ctxCat, {
         type: 'bar',
@@ -653,12 +813,12 @@
           },
           scales: {
             x: {
-              grid: { color: '#D9DEE5' },
-              ticks: { color: '#4A5568' }
+              grid: { color: themeCfg.gridColor },
+              ticks: { color: themeCfg.textColor }
             },
             y: {
-              grid: { color: '#D9DEE5' },
-              ticks: { color: '#4A5568' }
+              grid: { color: themeCfg.gridColor },
+              ticks: { color: themeCfg.textColor }
             }
           }
         }
@@ -2541,6 +2701,27 @@
       await checkServerHealth(true);
     });
 
+    // Selector y alternancia de temas (Barra Superior y Configuracion)
+    const topbarThemeBtn = $('btn-topbar-theme');
+    if (topbarThemeBtn) {
+      topbarThemeBtn.addEventListener('click', () => toggleTheme());
+    }
+
+    const cfgThemeDarkBtn = $('btn-cfg-theme-dark');
+    if (cfgThemeDarkBtn) {
+      cfgThemeDarkBtn.addEventListener('click', () => setTheme('dark'));
+    }
+
+    const cfgThemeLightBtn = $('btn-cfg-theme-light');
+    if (cfgThemeLightBtn) {
+      cfgThemeLightBtn.addEventListener('click', () => setTheme('light'));
+    }
+
+    const cfgThemeToggleBtn = $('btn-cfg-theme-toggle');
+    if (cfgThemeToggleBtn) {
+      cfgThemeToggleBtn.addEventListener('click', () => toggleTheme());
+    }
+
     // Modales
     $('btn-modal-confirm-close').addEventListener('click', closeConfirmModal);
     $('btn-modal-confirm-cancel').addEventListener('click', closeConfirmModal);
@@ -2571,6 +2752,7 @@
   }
 
   async function bootstrap() {
+    initTheme();
     await global.AppConfig.initConfig();
     populateConfigForm();
     populateAllCategorySelects();
@@ -2582,6 +2764,15 @@
     await checkServerHealth(false);
     await loadDashboard();
   }
+
+  global.AppTheme = {
+    getActiveTheme,
+    setTheme,
+    toggleTheme,
+    updateThemeUi,
+    updateChartTheme,
+    initTheme
+  };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', bootstrap);

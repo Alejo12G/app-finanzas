@@ -249,6 +249,29 @@
       .replace(/'/g, '&#39;');
   }
 
+  const THEME_STORAGE_KEY = 'app_theme';
+  const DEFAULT_THEME = 'dark';
+
+  function resolveAppTheme(storedValue) {
+    if (typeof storedValue === 'string' && storedValue.trim().toLowerCase() === 'light') {
+      return 'light';
+    }
+    return 'dark';
+  }
+
+  function getChartThemeConfig(theme) {
+    const isDark = (theme !== 'light');
+    return {
+      isDark,
+      gridColor: isDark ? '#2D3748' : '#D9DEE5',
+      textColor: isDark ? '#94A3B8' : '#4A5568',
+      ingresoColor: isDark ? '#38A169' : '#2E7D32',
+      gastoColor: isDark ? '#E53E3E' : '#C62828',
+      balanceColor: isDark ? '#2B6CB0' : '#1B2A4A',
+      emptyBarColor: isDark ? '#2D3748' : '#D9DEE5'
+    };
+  }
+
   global.AppUtils = {
     EMOJI_REGEX,
     MESES_NOMBRES,
@@ -260,6 +283,10 @@
     PRIORIDADES_IA,
     ICONOS_CATEGORIAS_PERMITIDOS,
     COLORES_CATEGORIAS_PERMITIDOS,
+    THEME_STORAGE_KEY,
+    DEFAULT_THEME,
+    resolveAppTheme,
+    getChartThemeConfig,
     containsEmoji,
     stripEmojis,
     roundHalfUp,
