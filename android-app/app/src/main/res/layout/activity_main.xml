@@ -17,6 +17,15 @@
         android:paddingLeft="@dimen/space_16"
         android:paddingRight="@dimen/space_16">
 
+        <ImageView
+            android:id="@+id/ivAppLogo"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginRight="@dimen/space_8"
+            android:contentDescription="@string/app_name"
+            android:scaleType="fitCenter"
+            android:src="@drawable/app_logo" />
+
         <TextView
             android:id="@+id/tvAppLogoIcon"
             android:layout_width="wrap_content"
@@ -24,7 +33,8 @@
             android:layout_marginRight="@dimen/space_8"
             android:contentDescription="@null"
             android:textColor="@color/color_texto_invertido"
-            android:textSize="18sp" />
+            android:textSize="18sp"
+            android:visibility="gone" />
 
         <LinearLayout
             android:layout_width="0dp"

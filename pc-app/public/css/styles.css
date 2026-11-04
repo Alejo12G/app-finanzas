@@ -76,6 +76,14 @@ html, body {
   color: var(--color-texto-invertido);
 }
 
+.topbar-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
 .topbar-title {
   font-size: 16px;
   font-weight: 600;
